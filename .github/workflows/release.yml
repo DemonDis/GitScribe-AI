@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -12,8 +15,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
 
       - run: npm ci
 
@@ -26,4 +27,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: '*.vsix'
-          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
