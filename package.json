@@ -1,0 +1,108 @@
+{
+  "name": "git-scribe-ai",
+  "displayName": "GitScribe AI",
+  "description": "AI-powered Git assistant: commit messages, README generation, reports",
+  "version": "1.0.0",
+  "icon": "img/icon.png",
+  "publisher": "git-scribe-ai",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "gitScribe-sidebar",
+          "title": "GitScribe AI",
+          "icon": "assets/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "gitScribe-sidebar": [
+        {
+          "type": "tree",
+          "id": "gitScribe-sidebar-view",
+          "name": "GitScribe AI"
+        }
+      ]
+    },
+    "menus": {
+      "scm/title": [
+        {
+          "command": "gitScribe.generateCommit",
+          "icon": {
+            "light": "assets/icon.svg",
+            "dark": "assets/icon.svg"
+          },
+          "group": "navigation",
+          "when": "scmProvider == git && scm hasChanges"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "gitScribe.setup",
+        "title": "GitScribe AI: Setup Configuration"
+      },
+      {
+        "command": "gitScribe.generateCommit",
+        "title": "GitScribe AI: Generate Commit Message",
+        "icon": {
+          "light": "assets/icon.svg",
+          "dark": "assets/icon.svg"
+        }
+      },
+      {
+        "command": "gitScribe.generateReadme",
+        "title": "GitScribe AI: Generate README"
+      },
+      {
+        "command": "gitScribe.updateReadme",
+        "title": "GitScribe AI: Update README"
+      },
+      {
+        "command": "gitScribe.editPrompt",
+        "title": "GitScribe AI: Edit Prompt"
+      },
+      {
+        "command": "gitScribe.generateReport",
+        "title": "GitScribe AI: Generate Report"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "gitScribe.generateCommit",
+        "key": "ctrl+shift+g",
+        "mac": "cmd+shift+g"
+      }
+    ],
+    "configuration": {
+      "title": "GitScribe AI",
+      "properties": {}
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "echo \"No linter yet\"",
+    "test": "echo \"No tests yet\""
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "openai": "^4.0.0",
+    "repomix": "^1.16.0",
+    "simple-git": "^3.22.0"
+  }
+}
