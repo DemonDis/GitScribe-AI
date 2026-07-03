@@ -1,0 +1,10 @@
+# Конфиг для страницы создания issue
+# Показывает ссылки на другие каналы
+blank_issues_enabled: true
+contact_links:
+  - name: Feature Request
+    url: https://github.com/DemonDis/GitScribe-AI/discussions/categories/feature-requests
+    about: Предложите новую фичу в Discussions
+  - name: Вопросы и помощь
+    url: https://github.com/DemonDis/GitScribe-AI/discussions
+    about: Задайте вопрос в Discussions

@@ -1,0 +1,13 @@
+# Dependabot — automated dependency updates
+# Checks for outdated npm packages weekly and creates PRs
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # Groups all updates into a single PR to reduce noise
+    groups:
+      all-dependencies:
+        patterns:
+          - "*"
