@@ -93,11 +93,13 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "lint": "echo \"No linter yet\"",
-    "test": "echo \"No tests yet\""
+    "test": "echo \"No tests yet\"",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.85.0",
+    "husky": "^9.1.7",
     "typescript": "^5.0.0"
   },
   "dependencies": {
