@@ -7,3 +7,12 @@ tsconfig.json
 yarn.lock
 package-lock.json
 dic/
+.github/**
+.gitattributes
+.nvmrc
+.editorconfig
+.husky/**
+SECURITY.md
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+docs/
