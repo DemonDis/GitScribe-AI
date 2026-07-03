@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="img/icon.svg" width="80" alt="GitScribe AI" />
-</p>
-
 <h1 align="center">GitScribe AI</h1>
 
 <p align="center">
