@@ -1,0 +1,4 @@
+title = "GitScribe AI secret scanning"
+
+[extend]
+useDefault = true
