@@ -3,6 +3,12 @@ out/
 *.vsix
 .DS_Store
 *.log
+*.tsbuildinfo
 
 .ilnsk
 .env
+.secrets
+
+.vscode-test/
+.idea/
+coverage/
