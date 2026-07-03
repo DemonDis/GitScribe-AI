@@ -6,3 +6,4 @@ tsconfig.json
 .gitignore
 yarn.lock
 package-lock.json
+dic/
