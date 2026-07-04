@@ -106,15 +106,27 @@
           "default": "",
           "description": "Model name (e.g., gpt-4o, deepseek-chat)"
         },
+        "gitscribe.gitProvider": {
+          "type": "string",
+          "default": "gitlab",
+          "enum": ["gitlab", "github"],
+          "enumDescriptions": ["GitLab", "GitHub"],
+          "description": "Git provider for API integration"
+        },
         "gitscribe.gitlabUrl": {
           "type": "string",
           "default": "",
-          "description": "GitLab instance URL"
+          "description": "GitLab server URL (e.g., https://gitlab.com)"
         },
         "gitscribe.gitlabToken": {
           "type": "string",
           "default": "",
-          "description": "GitLab Personal Access Token"
+          "description": "GitLab personal access token"
+        },
+        "gitscribe.githubToken": {
+          "type": "string",
+          "default": "",
+          "description": "GitHub personal access token (classic with repo scope)"
         },
         "gitscribe.rejectUnauthorized": {
           "type": "boolean",

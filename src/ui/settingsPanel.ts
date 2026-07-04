@@ -7,15 +7,17 @@ const T: Record<Lang, Record<string, string>> = {
     title: 'GitScribe AI Settings',
     save: 'Save',
     aiProvider: 'AI Provider',
-    gitlab: 'GitLab',
+    gitIntegration: 'Git Integration',
     commitPrompt: 'Commit Prompt',
     promptTemplate: 'Prompt template',
     options: 'Options',
     apiUrl: 'API URL',
     apiKey: 'API Key',
     model: 'Model',
+    gitProvider: 'Provider',
     gitlabUrl: 'GitLab URL',
     gitlabToken: 'GitLab Token',
+    githubToken: 'GitHub Token',
     tlsVerify: 'Disable TLS certificate verification (rejectUnauthorized)',
     gitmoji: 'Use gitmoji in commit messages',
     settingsSaved: 'Settings saved!',
@@ -26,20 +28,23 @@ const T: Record<Lang, Record<string, string>> = {
     modelPlaceholder: 'gpt-4o, deepseek-chat, claude-3-sonnet',
     gitlabUrlPlaceholder: 'https://gitlab.com',
     gitlabTokenPlaceholder: 'glpat-...',
+    githubTokenPlaceholder: 'ghp_...',
   },
   ru: {
     title: 'GitScribe AI — настройки',
     save: 'Сохранить',
     aiProvider: 'AI провайдер',
-    gitlab: 'GitLab',
+    gitIntegration: 'Git интеграция',
     commitPrompt: 'Промт коммита',
     promptTemplate: 'Шаблон промта',
     options: 'Опции',
     apiUrl: 'API URL',
     apiKey: 'API Key',
     model: 'Модель',
+    gitProvider: 'Провайдер',
     gitlabUrl: 'GitLab URL',
     gitlabToken: 'GitLab токен',
+    githubToken: 'GitHub токен',
     tlsVerify: 'Отключить проверку TLS сертификата (rejectUnauthorized)',
     gitmoji: 'Использовать gitmoji в коммитах',
     settingsSaved: 'Настройки сохранены!',
@@ -50,6 +55,7 @@ const T: Record<Lang, Record<string, string>> = {
     modelPlaceholder: 'gpt-4o, deepseek-chat, claude-3-sonnet',
     gitlabUrlPlaceholder: 'https://gitlab.com',
     gitlabTokenPlaceholder: 'glpat-...',
+    githubTokenPlaceholder: 'ghp_...',
   },
 };
 
@@ -111,8 +117,10 @@ export class SettingsPanel {
         apiUrl: config.get('apiUrl', ''),
         apiKey: config.get('apiKey', ''),
         model: config.get('model', ''),
+        gitProvider: config.get('gitProvider', 'gitlab'),
         gitlabUrl: config.get('gitlabUrl', ''),
         gitlabToken: config.get('gitlabToken', ''),
+        githubToken: config.get('githubToken', ''),
         rejectUnauthorized: config.get('rejectUnauthorized', false),
         gitmoji: config.get('gitmoji', false),
         prompt: config.get('prompt', ''),
@@ -126,8 +134,10 @@ export class SettingsPanel {
     await config.update('apiUrl', msg.apiUrl, vscode.ConfigurationTarget.Global);
     await config.update('apiKey', msg.apiKey, vscode.ConfigurationTarget.Global);
     await config.update('model', msg.model, vscode.ConfigurationTarget.Global);
+    await config.update('gitProvider', msg.gitProvider, vscode.ConfigurationTarget.Global);
     await config.update('gitlabUrl', msg.gitlabUrl, vscode.ConfigurationTarget.Global);
     await config.update('gitlabToken', msg.gitlabToken, vscode.ConfigurationTarget.Global);
+    await config.update('githubToken', msg.githubToken, vscode.ConfigurationTarget.Global);
     await config.update('rejectUnauthorized', msg.rejectUnauthorized, vscode.ConfigurationTarget.Global);
     await config.update('gitmoji', msg.gitmoji, vscode.ConfigurationTarget.Global);
     await config.update('prompt', msg.prompt, vscode.ConfigurationTarget.Global);
@@ -188,6 +198,37 @@ textarea:focus,
 select:focus {
   outline: 1px solid var(--vscode-focusBorder);
   border-color: var(--vscode-focusBorder);
+}
+.toggle-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.toggle-btn {
+  flex: 1;
+  padding: 8px 12px;
+  text-align: center;
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 4px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.toggle-btn.active {
+  border-color: var(--vscode-focusBorder);
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+}
+.toggle-btn:hover {
+  border-color: var(--vscode-focusBorder);
+}
+.git-fields {
+  display: none;
+}
+.git-fields.visible {
+  display: block;
 }
 .checkbox-group {
   display: flex;
@@ -291,7 +332,15 @@ h2 {
 </div>
 
 <div class="section">
-<div class="section-title">${this._tr('gitlab')}</div>
+<div class="section-title">${this._tr('gitIntegration')}</div>
+<div class="form-group">
+<label>${this._tr('gitProvider')}</label>
+<div class="toggle-row">
+<div class="toggle-btn" id="btn-gitlab" onclick="setProvider('gitlab')">GitLab</div>
+<div class="toggle-btn" id="btn-github" onclick="setProvider('github')">GitHub</div>
+</div>
+</div>
+<div class="git-fields" id="gitlab-fields">
 <div class="form-group">
 <label for="gitlabUrl">${this._tr('gitlabUrl')}</label>
 <input type="text" id="gitlabUrl" placeholder="${this._tr('gitlabUrlPlaceholder')}" />
@@ -299,6 +348,13 @@ h2 {
 <div class="form-group">
 <label for="gitlabToken">${this._tr('gitlabToken')}</label>
 <input type="password" id="gitlabToken" placeholder="${this._tr('gitlabTokenPlaceholder')}" />
+</div>
+</div>
+<div class="git-fields" id="github-fields">
+<div class="form-group">
+<label for="githubToken">${this._tr('githubToken')}</label>
+<input type="password" id="githubToken" placeholder="${this._tr('githubTokenPlaceholder')}" />
+</div>
 </div>
 </div>
 
@@ -331,6 +387,13 @@ function setLang() {
   vscode.postMessage({ command: 'setLang', lang: document.getElementById('language').value });
 }
 
+function setProvider(provider) {
+  document.getElementById('btn-gitlab').classList.toggle('active', provider === 'gitlab');
+  document.getElementById('btn-github').classList.toggle('active', provider === 'github');
+  document.getElementById('gitlab-fields').classList.toggle('visible', provider === 'gitlab');
+  document.getElementById('github-fields').classList.toggle('visible', provider === 'github');
+}
+
 window.addEventListener('message', (event) => {
   const msg = event.data;
   if (msg.command === 'setValues') {
@@ -339,9 +402,11 @@ window.addEventListener('message', (event) => {
     document.getElementById('model').value = msg.values.model || '';
     document.getElementById('gitlabUrl').value = msg.values.gitlabUrl || '';
     document.getElementById('gitlabToken').value = msg.values.gitlabToken || '';
+    document.getElementById('githubToken').value = msg.values.githubToken || '';
     document.getElementById('rejectUnauthorized').checked = msg.values.rejectUnauthorized || false;
     document.getElementById('gitmoji').checked = msg.values.gitmoji || false;
     document.getElementById('language').value = msg.values.language || 'en';
+    setProvider(msg.values.gitProvider || 'gitlab');
     if (msg.values.prompt) {
       document.getElementById('prompt').value = msg.values.prompt;
     }
@@ -353,8 +418,10 @@ function save() {
     apiUrl: document.getElementById('apiUrl').value,
     apiKey: document.getElementById('apiKey').value,
     model: document.getElementById('model').value,
+    gitProvider: document.getElementById('btn-gitlab').classList.contains('active') ? 'gitlab' : 'github',
     gitlabUrl: document.getElementById('gitlabUrl').value,
     gitlabToken: document.getElementById('gitlabToken').value,
+    githubToken: document.getElementById('githubToken').value,
     rejectUnauthorized: document.getElementById('rejectUnauthorized').checked,
     gitmoji: document.getElementById('gitmoji').checked,
     prompt: document.getElementById('prompt').value,

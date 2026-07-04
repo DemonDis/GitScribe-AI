@@ -3,6 +3,7 @@ import { ConfigService } from '../../config/configService';
 import { AiService } from '../../services/aiService';
 import { GitService } from '../../services/gitService';
 import { getChangesFromGitLab } from '../../services/gitlabService';
+import { getChangesFromGitHub } from '../../services/githubService';
 import { t } from '../../i18n';
 
 const configService = new ConfigService();
@@ -107,7 +108,8 @@ export function registerReportCommands(context: vscode.ExtensionContext): vscode
       { label: `$(clock) ${t('today')}`, value: 'today' },
       { label: `$(calendar) ${t('dateRange')}`, value: 'date' },
       { label: `$(git-commit) ${t('betweenCommits')}`, value: 'commits' },
-      { label: `$(server) ${t('gitlabCommits')}`, value: 'gitlab' },
+      { label: `$(server) ${t('gitlabCommitsSource')}`, value: 'gitlab' },
+      { label: `$(server) ${t('githubCommitsSource')}`, value: 'github' },
     ];
 
     const picked = await vscode.window.showQuickPick(modeItems, {
@@ -165,6 +167,32 @@ export function registerReportCommands(context: vscode.ExtensionContext): vscode
           fromDate,
           toDate,
           config.rejectUnauthorized ?? false,
+          true
+        );
+      } else if (picked.value === 'github') {
+        if (!config.githubToken) {
+          vscode.window.showWarningMessage(t('githubTokenMissing'));
+          return;
+        }
+        const fromDate = await vscode.window.showInputBox({
+          prompt: t('startDate'),
+          placeHolder: 'YYYY-MM-DD',
+          validateInput: (v: string | undefined) => (v ? null : t('enterDate')),
+        });
+        if (!fromDate) return;
+
+        const toDate = await vscode.window.showInputBox({
+          prompt: t('endDate'),
+          placeHolder: 'YYYY-MM-DD',
+          validateInput: (v: string | undefined) => (v ? null : t('enterDate')),
+        });
+        if (!toDate) return;
+
+        changes = await getChangesFromGitHub(
+          config.githubToken,
+          gitService,
+          fromDate,
+          toDate,
           true
         );
       } else {

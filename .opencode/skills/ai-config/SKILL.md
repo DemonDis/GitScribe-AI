@@ -11,11 +11,16 @@ metadata:
 ## What I do
 
 - Configure AI provider (OpenAI, Anthropic, or custom API endpoint)
-- Set API keys, model selection, temperature, and max tokens
-- Manage prompt templates for commit messages, README, and reports
-- Update `gitscribe.*` VS Code settings
+- Set API URL, API key, and model selection
+- Manage commit prompt template with `{diff}` placeholder
+- Switch UI language (English/Русский)
+- All settings stored in VS Code `gitscribe.*` preferences
 
 ## When to use me
 
 Use this when setting up or changing the AI provider configuration.
-Check `src/config/` and `src/services/aiService.ts` for available options.
+Key files:
+- Settings panel: `src/ui/settingsPanel.ts`
+- Config: `src/config/configService.ts`, `src/config/types.ts`
+- AI service: `src/services/aiService.ts`
+- i18n: `src/i18n.ts`

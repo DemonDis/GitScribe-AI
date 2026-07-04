@@ -1,6 +1,6 @@
 ---
 name: gitlab-sync
-description: Configure and sync GitLab integration for publishing README and reports
+description: Configure Git provider integration (GitLab/GitHub) for fetching commits and publishing
 license: Apache-2.0
 compatibility: opencode
 metadata:
@@ -10,11 +10,15 @@ metadata:
 
 ## What I do
 
-- Configure GitLab repository connection (URL, token, project ID)
-- Push generated README and reports to GitLab
-- Manage GitLab publish settings
+- Configure Git provider (GitLab or GitHub) connection
+- GitLab: URL + personal access token
+- GitHub: personal access token (classic, repo scope)
+- Fetch commits via API for reports
+- Push generated README and reports
 
 ## When to use me
 
-Use this when setting up GitLab publishing for generated documents.
-Check `src/services/gitlabService.ts` for API details.
+Use this when setting up Git provider integration.
+- GitLab: `src/services/gitlabService.ts`
+- GitHub: `src/services/githubService.ts`
+- Provider toggle in settings panel (`src/ui/settingsPanel.ts`)
