@@ -8,48 +8,6 @@ const configService = new ConfigService();
 const aiService = new AiService();
 
 export function registerCommitCommands(context: vscode.ExtensionContext): vscode.Disposable[] {
-  const setupCommand = vscode.commands.registerCommand('gitScribe.setup', async () => {
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    if (!workspaceFolder) {
-      vscode.window.showErrorMessage(t('noWorkspaceFolder'));
-      return;
-    }
-
-    const workspacePath = workspaceFolder.uri.fsPath;
-
-    const apiUrl = await vscode.window.showInputBox({
-      title: 'GitScribe AI - API URL',
-      prompt: 'Enter API URL (e.g., https://api.openai.com/v1)'
-    });
-    if (!apiUrl) return;
-
-    const apiKey = await vscode.window.showInputBox({
-      title: 'GitScribe AI - API Key',
-      password: true,
-      prompt: 'Enter API Key'
-    });
-    if (!apiKey) return;
-
-    const model = await vscode.window.showInputBox({
-      title: 'GitScribe AI - Model',
-      prompt: 'Enter model name (e.g., gpt-4o, deepseek-chat)'
-    });
-    if (!model) return;
-
-    const gitmoji = await vscode.window.showQuickPick(['Yes', 'No'], {
-      title: 'Enable Gitmoji?'
-    });
-
-    const config = {
-      apiUrl, apiKey, model,
-      gitmoji: gitmoji === 'Yes',
-      rejectUnauthorized: false,
-    };
-
-    configService.saveIlnskConfig(workspacePath, config as any);
-    vscode.window.showInformationMessage(t('gitScribeConfigured'));
-  });
-
   const generateCommand = vscode.commands.registerCommand('gitScribe.generateCommit', async () => {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     if (!workspaceFolder) {
@@ -61,7 +19,8 @@ export function registerCommitCommands(context: vscode.ExtensionContext): vscode
 
     const config = configService.readConfig(workspacePath);
     if (!config) {
-      configService.createIlnskConfig(workspacePath);
+      vscode.window.showWarningMessage(t('configureFirstPrompt'));
+      vscode.commands.executeCommand('gitScribe.openSettings');
       return;
     }
 
@@ -101,5 +60,5 @@ export function registerCommitCommands(context: vscode.ExtensionContext): vscode
     }
   });
 
-  return [setupCommand, generateCommand];
+  return [generateCommand];
 }

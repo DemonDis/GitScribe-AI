@@ -6,7 +6,7 @@ import { DEFAULT_REPOMIX_CONFIG } from './repomix';
 import { t } from '../i18n';
 
 export class ConfigService {
-  getIlnskPath(workspacePath: string): string {
+  private getIlnskPath(workspacePath: string): string {
     return path.join(workspacePath, '.ilnsk');
   }
 
@@ -18,31 +18,7 @@ export class ConfigService {
     return fs.existsSync(filePath);
   }
 
-  readConfig(workspacePath: string): AiConfig | null {
-    const vsconfig = vscode.workspace.getConfiguration('gitscribe');
-    const apiUrl = vsconfig.get<string>('apiUrl');
-    const apiKey = vsconfig.get<string>('apiKey');
-    const model = vsconfig.get<string>('model');
-
-    if (apiUrl && apiKey && model) {
-      return {
-        apiUrl,
-        apiKey,
-        model,
-        gitProvider: (vsconfig.get<string>('gitProvider') as 'gitlab' | 'github') || 'gitlab',
-        gitlabUrl: vsconfig.get<string>('gitlabUrl'),
-        gitlabToken: vsconfig.get<string>('gitlabToken'),
-        githubToken: vsconfig.get<string>('githubToken'),
-        rejectUnauthorized: vsconfig.get<boolean>('rejectUnauthorized', false),
-        gitmoji: vsconfig.get<boolean>('gitmoji', false),
-        prompt: vsconfig.get<string>('prompt') || DEFAULT_AI_CONFIG.prompt,
-      };
-    }
-
-    return this.readIlnskConfig(workspacePath);
-  }
-
-  readIlnskConfig(workspacePath: string): AiConfig | null {
+  private readIlnskConfig(workspacePath: string): AiConfig | null {
     const configPath = this.getIlnskPath(workspacePath);
     try {
       if (fs.existsSync(configPath)) {
@@ -51,8 +27,6 @@ export class ConfigService {
         if (config.apiUrl && config.apiKey && config.model) {
           return config;
         }
-        vscode.window.showWarningMessage(t('configIncomplete'));
-        return null;
       }
     } catch (error) {
       vscode.window.showErrorMessage(`${t('errorReadingConfig')} ${error}`);
@@ -60,15 +34,32 @@ export class ConfigService {
     return null;
   }
 
-  createIlnskConfig(workspacePath: string): void {
-    const configPath = this.getIlnskPath(workspacePath);
-    fs.writeFileSync(configPath, JSON.stringify(DEFAULT_AI_CONFIG, null, 2));
-    vscode.window.showInformationMessage(t('configTemplateCreated').replace('{path}', configPath));
+  private readVsConfig(): AiConfig | null {
+    const vsconfig = vscode.workspace.getConfiguration('gitscribe');
+    const apiUrl = vsconfig.get<string>('apiUrl');
+    const apiKey = vsconfig.get<string>('apiKey');
+    const model = vsconfig.get<string>('model');
+
+    if (!apiUrl || !apiKey || !model) {
+      return null;
+    }
+
+    return {
+      apiUrl,
+      apiKey,
+      model,
+      gitProvider: (vsconfig.get<string>('gitProvider') as 'gitlab' | 'github') || 'gitlab',
+      gitlabUrl: vsconfig.get<string>('gitlabUrl'),
+      gitlabToken: vsconfig.get<string>('gitlabToken'),
+      githubToken: vsconfig.get<string>('githubToken'),
+      rejectUnauthorized: vsconfig.get<boolean>('rejectUnauthorized', false),
+      gitmoji: vsconfig.get<boolean>('gitmoji', false),
+      prompt: vsconfig.get<string>('prompt') || DEFAULT_AI_CONFIG.prompt,
+    };
   }
 
-  saveIlnskConfig(workspacePath: string, config: AiConfig): void {
-    const configPath = this.getIlnskPath(workspacePath);
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+  readConfig(workspacePath: string): AiConfig | null {
+    return this.readIlnskConfig(workspacePath) || this.readVsConfig();
   }
 
   checkOrCreateRepomixConfig(workspacePath: string): boolean {

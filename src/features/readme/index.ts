@@ -14,7 +14,7 @@ const aiService = new AiService();
 const tokenService = new TokenService();
 
 function getPromptContent(context: vscode.ExtensionContext, promptFile: string): string {
-  const promptsPath = path.join(context.extensionPath, 'src', 'prompts', promptFile);
+  const promptsPath = path.join(context.extensionPath, 'assets', 'prompts', promptFile);
   return fs.readFileSync(promptsPath, 'utf-8');
 }
 
@@ -31,16 +31,10 @@ export function registerReadmeCommands(context: vscode.ExtensionContext): vscode
     }
 
     const workspacePath = workspaceFolder.uri.fsPath;
-    const wasCreated = configService.checkOrCreateRepomixConfig(workspacePath);
+    configService.checkOrCreateRepomixConfig(workspacePath);
 
-    let config = configService.readConfig(workspacePath);
+    const config = configService.readConfig(workspacePath);
     if (!config) {
-      configService.createIlnskConfig(workspacePath);
-      vscode.window.showWarningMessage(t('createdDefaultConfig'));
-      return;
-    }
-
-    if (!config.apiUrl || !config.apiKey || !config.model) {
       vscode.window.showWarningMessage(t('configureFirstPrompt'));
       vscode.commands.executeCommand('gitScribe.openSettings');
       return;
@@ -113,14 +107,8 @@ export function registerReadmeCommands(context: vscode.ExtensionContext): vscode
 
     const workspacePath = workspaceFolder.uri.fsPath;
 
-    let config = configService.readConfig(workspacePath);
+    const config = configService.readConfig(workspacePath);
     if (!config) {
-      configService.createIlnskConfig(workspacePath);
-      vscode.window.showWarningMessage(t('createdDefaultConfig'));
-      return;
-    }
-
-    if (!config.apiUrl || !config.apiKey || !config.model) {
       vscode.window.showWarningMessage(t('configureFirstPrompt'));
       vscode.commands.executeCommand('gitScribe.openSettings');
       return;

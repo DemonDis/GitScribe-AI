@@ -3,6 +3,7 @@
 src/**
 node_modules/**
 tsconfig.json
+tsconfig.tsbuildinfo
 .gitignore
 yarn.lock
 package-lock.json
@@ -16,3 +17,6 @@ SECURITY.md
 CONTRIBUTING.md
 CODE_OF_CONDUCT.md
 docs/
+*.log
+*.vsix
+git-scribe-ai-*

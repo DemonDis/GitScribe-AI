@@ -16,8 +16,10 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
-  "main": "./out/extension.js",
+  "activationEvents": [
+    "*"
+  ],
+  "main": "out/extension.js",
   "contributes": {
     "viewsContainers": {
       "activitybar": [
@@ -56,10 +58,6 @@
         "title": "GitScribe AI: Open Settings"
       },
       {
-        "command": "gitScribe.setup",
-        "title": "GitScribe AI: Setup Configuration"
-      },
-      {
         "command": "gitScribe.generateCommit",
         "title": "GitScribe AI: Generate Commit Message",
         "icon": {
@@ -75,7 +73,6 @@
         "command": "gitScribe.updateReadme",
         "title": "GitScribe AI: Update README"
       },
-
       {
         "command": "gitScribe.generateReport",
         "title": "GitScribe AI: Generate Report"
@@ -109,8 +106,14 @@
         "gitscribe.gitProvider": {
           "type": "string",
           "default": "gitlab",
-          "enum": ["gitlab", "github"],
-          "enumDescriptions": ["GitLab", "GitHub"],
+          "enum": [
+            "gitlab",
+            "github"
+          ],
+          "enumDescriptions": [
+            "GitLab",
+            "GitHub"
+          ],
           "description": "Git provider for API integration"
         },
         "gitscribe.gitlabUrl": {
@@ -146,8 +149,14 @@
         "gitscribe.language": {
           "type": "string",
           "default": "en",
-          "enum": ["en", "ru"],
-          "enumDescriptions": ["English", "Русский"],
+          "enum": [
+            "en",
+            "ru"
+          ],
+          "enumDescriptions": [
+            "English",
+            "Русский"
+          ],
           "description": "Language for the settings panel UI"
         }
       }
@@ -155,8 +164,9 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "compile": "rm -rf out && esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "watch": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --sourcemap --watch",
+    "typecheck": "tsc --noEmit",
     "lint": "echo \"No linter yet\"",
     "test": "echo \"No tests yet\"",
     "prepare": "husky"
@@ -164,12 +174,11 @@
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.85.0",
+    "esbuild": "^0.28.1",
     "husky": "^9.1.7",
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "openai": "^4.0.0",
-    "repomix": "^1.16.0",
     "simple-git": "^3.22.0"
   }
 }
