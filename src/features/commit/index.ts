@@ -58,7 +58,7 @@ export function registerCommitCommands(context: vscode.ExtensionContext): vscode
 
     const workspacePath = workspaceFolder.uri.fsPath;
 
-    const config = configService.readIlnskConfig(workspacePath);
+    const config = configService.readConfig(workspacePath);
     if (!config) {
       configService.createIlnskConfig(workspacePath);
       return;

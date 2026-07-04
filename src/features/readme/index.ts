@@ -32,7 +32,7 @@ export function registerReadmeCommands(context: vscode.ExtensionContext): vscode
     const workspacePath = workspaceFolder.uri.fsPath;
     const wasCreated = configService.checkOrCreateRepomixConfig(workspacePath);
 
-    let config = configService.readIlnskConfig(workspacePath);
+    let config = configService.readConfig(workspacePath);
     if (!config) {
       configService.createIlnskConfig(workspacePath);
       vscode.window.showWarningMessage('Created default .ilnsk config. Please configure and run again.');
@@ -40,8 +40,8 @@ export function registerReadmeCommands(context: vscode.ExtensionContext): vscode
     }
 
     if (!config.apiUrl || !config.apiKey || !config.model) {
-      vscode.window.showWarningMessage('Please configure .ilnsk settings first.');
-      vscode.commands.executeCommand('gitScribe.setup');
+      vscode.window.showWarningMessage('Please configure settings first.');
+      vscode.commands.executeCommand('gitScribe.openSettings');
       return;
     }
 
@@ -112,7 +112,7 @@ export function registerReadmeCommands(context: vscode.ExtensionContext): vscode
 
     const workspacePath = workspaceFolder.uri.fsPath;
 
-    let config = configService.readIlnskConfig(workspacePath);
+    let config = configService.readConfig(workspacePath);
     if (!config) {
       configService.createIlnskConfig(workspacePath);
       vscode.window.showWarningMessage('Created default .ilnsk config. Please configure and run again.');
@@ -120,8 +120,8 @@ export function registerReadmeCommands(context: vscode.ExtensionContext): vscode
     }
 
     if (!config.apiUrl || !config.apiKey || !config.model) {
-      vscode.window.showWarningMessage('Please configure .ilnsk settings first.');
-      vscode.commands.executeCommand('gitScribe.setup');
+      vscode.window.showWarningMessage('Please configure settings first.');
+      vscode.commands.executeCommand('gitScribe.openSettings');
       return;
     }
 
@@ -211,33 +211,5 @@ ${formattedDiff}`;
     await vscode.window.showTextDocument(doc);
   });
 
-  const editPromptCommand = vscode.commands.registerCommand('gitScribe.editPrompt', async (promptFile: string, folder: string = '') => {
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    if (!workspaceFolder) {
-      vscode.window.showErrorMessage('No workspace folder found');
-      return;
-    }
-
-    const promptsPath = folder
-      ? path.join(context.extensionPath, 'src', 'prompts', folder, promptFile)
-      : path.join(context.extensionPath, 'src', 'prompts', promptFile);
-
-    if (!fs.existsSync(promptsPath)) {
-      vscode.window.showErrorMessage(`Prompt file not found: ${promptFile}`);
-      return;
-    }
-
-    const doc = await vscode.workspace.openTextDocument(promptsPath);
-    const editor = await vscode.window.showTextDocument(doc);
-
-    const saveListener = vscode.workspace.onDidSaveTextDocument(async (savedDoc) => {
-      if (savedDoc.uri.fsPath === promptsPath) {
-        vscode.window.showInformationMessage(`Prompt saved: ${promptFile}`);
-      }
-    });
-
-    context.subscriptions.push(saveListener);
-  });
-
-  return [generateCommand, updateCommand, editPromptCommand];
+  return [generateCommand, updateCommand];
 }

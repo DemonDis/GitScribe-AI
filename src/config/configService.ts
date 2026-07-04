@@ -17,6 +17,27 @@ export class ConfigService {
     return fs.existsSync(filePath);
   }
 
+  readConfig(workspacePath: string): AiConfig | null {
+    const vsconfig = vscode.workspace.getConfiguration('gitscribe');
+    const apiUrl = vsconfig.get<string>('apiUrl');
+    const apiKey = vsconfig.get<string>('apiKey');
+    const model = vsconfig.get<string>('model');
+
+    if (apiUrl && apiKey && model) {
+      return {
+        apiUrl,
+        apiKey,
+        model,
+        gitlabUrl: vsconfig.get<string>('gitlabUrl'),
+        gitlabToken: vsconfig.get<string>('gitlabToken'),
+        rejectUnauthorized: vsconfig.get<boolean>('rejectUnauthorized', false),
+        gitmoji: vsconfig.get<boolean>('gitmoji', false),
+      };
+    }
+
+    return this.readIlnskConfig(workspacePath);
+  }
+
   readIlnskConfig(workspacePath: string): AiConfig | null {
     const configPath = this.getIlnskPath(workspacePath);
     try {
@@ -26,7 +47,7 @@ export class ConfigService {
         if (config.apiUrl && config.apiKey && config.model) {
           return config;
         }
-        vscode.window.showWarningMessage('Config incomplete. Please fill apiUrl, apiKey, and model in .ilnsk');
+        vscode.window.showWarningMessage('Config incomplete. Please fill apiUrl, apiKey, and model in settings or .ilnsk');
         return null;
       }
     } catch (error) {
@@ -38,7 +59,7 @@ export class ConfigService {
   createIlnskConfig(workspacePath: string): void {
     const configPath = this.getIlnskPath(workspacePath);
     fs.writeFileSync(configPath, JSON.stringify(DEFAULT_AI_CONFIG, null, 2));
-    vscode.window.showInformationMessage(`Config template created at ${configPath}. Please edit it.`);
+    vscode.window.showInformationMessage(`Config template created at ${configPath}. Please edit it or use Settings panel.`);
   }
 
   saveIlnskConfig(workspacePath: string, config: AiConfig): void {

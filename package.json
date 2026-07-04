@@ -52,6 +52,10 @@
     },
     "commands": [
       {
+        "command": "gitScribe.openSettings",
+        "title": "GitScribe AI: Open Settings"
+      },
+      {
         "command": "gitScribe.setup",
         "title": "GitScribe AI: Setup Configuration"
       },
@@ -71,10 +75,7 @@
         "command": "gitScribe.updateReadme",
         "title": "GitScribe AI: Update README"
       },
-      {
-        "command": "gitScribe.editPrompt",
-        "title": "GitScribe AI: Edit Prompt"
-      },
+
       {
         "command": "gitScribe.generateReport",
         "title": "GitScribe AI: Generate Report"
@@ -89,7 +90,43 @@
     ],
     "configuration": {
       "title": "GitScribe AI",
-      "properties": {}
+      "properties": {
+        "gitscribe.apiUrl": {
+          "type": "string",
+          "default": "",
+          "description": "API URL (e.g., https://api.openai.com/v1)"
+        },
+        "gitscribe.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key"
+        },
+        "gitscribe.model": {
+          "type": "string",
+          "default": "",
+          "description": "Model name (e.g., gpt-4o, deepseek-chat)"
+        },
+        "gitscribe.gitlabUrl": {
+          "type": "string",
+          "default": "",
+          "description": "GitLab instance URL"
+        },
+        "gitscribe.gitlabToken": {
+          "type": "string",
+          "default": "",
+          "description": "GitLab Personal Access Token"
+        },
+        "gitscribe.rejectUnauthorized": {
+          "type": "boolean",
+          "default": false,
+          "description": "Disable TLS certificate verification (rejectUnauthorized)"
+        },
+        "gitscribe.gitmoji": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable gitmoji in commit messages"
+        }
+      }
     }
   },
   "scripts": {

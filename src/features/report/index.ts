@@ -89,11 +89,11 @@ function showReportPanel(report: string) {
 
 export function registerReportCommands(context: vscode.ExtensionContext): vscode.Disposable[] {
   const generateCommand = vscode.commands.registerCommand('gitScribe.generateReport', async () => {
-    const config = configService.readIlnskConfig(
+    const config = configService.readConfig(
       vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || ''
     );
     if (!config) {
-      vscode.window.showErrorMessage('Please configure .ilnsk first');
+      vscode.window.showErrorMessage('Please configure settings first');
       return;
     }
 
