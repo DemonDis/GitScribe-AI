@@ -1,0 +1,22 @@
+{
+  "agent": {
+    "plan": {
+      "tools": {
+        "skill": true
+      }
+    }
+  },
+  "permission": {
+    "skill": {
+      "*": "ask",
+      "git-release": "allow",
+      "git-commit": "allow",
+      "readme-generate": "allow",
+      "report-generate": "allow",
+      "ai-config": "allow",
+      "gitlab-sync": "allow",
+      "extension-setup": "allow",
+      "code-review": "allow"
+    }
+  }
+}
