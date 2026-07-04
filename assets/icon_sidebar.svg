@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <!-- В маске: белое = видно, черное = прозрачный вырез -->
+    <mask id="cutouts" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128">
+      <rect width="128" height="128" fill="white"/>
+      <!-- Вырез левой половины круга -->
+      <path d="M64 32 A32 32 0 0 0 64 96 Z" fill="black"/>
+      <!-- Вырез обводки круга -->
+      <circle cx="64" cy="64" r="32" fill="none" stroke="black" stroke-width="2"/>
+    </mask>
+  </defs>
+  <!-- Все элементы внутри группы прорезаются маской -->
+  <g mask="url(#cutouts)">
+    <!-- Квадрат с закругленными углами -->
+    <rect x="8" y="8" width="112" height="112" rx="24" ry="24" fill="#4A90D9"/>
+    <!-- Темная половина круга -->
+    <circle cx="64" cy="64" r="32" fill="#2E5C8A"/>
+  </g>
+</svg>
