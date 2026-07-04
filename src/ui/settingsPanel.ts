@@ -54,6 +54,7 @@ export class SettingsPanel {
         gitlabToken: config.get('gitlabToken', ''),
         rejectUnauthorized: config.get('rejectUnauthorized', false),
         gitmoji: config.get('gitmoji', false),
+        prompt: config.get('prompt', ''),
       }
     });
   }
@@ -67,6 +68,7 @@ export class SettingsPanel {
     await config.update('gitlabToken', msg.gitlabToken, vscode.ConfigurationTarget.Global);
     await config.update('rejectUnauthorized', msg.rejectUnauthorized, vscode.ConfigurationTarget.Global);
     await config.update('gitmoji', msg.gitmoji, vscode.ConfigurationTarget.Global);
+    await config.update('prompt', msg.prompt, vscode.ConfigurationTarget.Global);
     vscode.window.showInformationMessage('Settings saved!');
   }
 
@@ -93,7 +95,8 @@ label {
   color: var(--vscode-settings-labelForeground);
 }
 input[type="text"],
-input[type="password"] {
+input[type="password"],
+textarea {
   width: 100%;
   padding: 6px 10px;
   border: 1px solid var(--vscode-input-border);
@@ -102,7 +105,16 @@ input[type="password"] {
   color: var(--vscode-input-foreground);
   font-size: 13px;
 }
-input:focus {
+textarea {
+  min-height: 80px;
+  max-height: 400px;
+  resize: vertical;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+input:focus,
+textarea:focus {
   outline: 1px solid var(--vscode-focusBorder);
   border-color: var(--vscode-focusBorder);
 }
@@ -125,10 +137,27 @@ input:focus {
 }
 .btn:hover { background: var(--vscode-button-hoverBackground); }
 h2 {
-  margin-bottom: 20px;
+  margin: 0;
   font-size: 16px;
   font-weight: 600;
 }
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.btn-sm {
+  width: auto;
+  padding: 4px 12px;
+  border: none;
+  border-radius: 4px;
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  font-size: 12px;
+  cursor: pointer;
+}
+.btn-sm:hover { background: var(--vscode-button-hoverBackground); }
 .section {
   margin-bottom: 24px;
   padding-bottom: 16px;
@@ -144,7 +173,10 @@ h2 {
 </style>
 </head>
 <body>
+<div class="header">
 <h2>GitScribe AI Settings</h2>
+<button class="btn-sm" onclick="save()">Save</button>
+</div>
 
 <div class="section">
 <div class="section-title">AI Provider</div>
@@ -171,6 +203,18 @@ h2 {
 <div class="form-group">
 <label for="gitlabToken">GitLab Token</label>
 <input type="password" id="gitlabToken" placeholder="glpat-..." />
+</div>
+</div>
+
+<div class="section">
+<div class="section-title">Commit Prompt</div>
+<div class="form-group">
+<label for="prompt">Prompt template</label>
+<textarea id="prompt">Generate a concise git commit message (max 72 characters for title). Analyze this diff and create a semantic commit message:
+
+{diff}
+
+Return ONLY the commit message, no explanation.</textarea>
 </div>
 </div>
 
@@ -205,6 +249,9 @@ window.addEventListener('message', (event) => {
     document.getElementById('gitlabToken').value = msg.values.gitlabToken || '';
     document.getElementById('rejectUnauthorized').checked = msg.values.rejectUnauthorized || false;
     document.getElementById('gitmoji').checked = msg.values.gitmoji || false;
+    if (msg.values.prompt) {
+      document.getElementById('prompt').value = msg.values.prompt;
+    }
   }
 });
 function save() {
@@ -217,6 +264,7 @@ function save() {
     gitlabToken: document.getElementById('gitlabToken').value,
     rejectUnauthorized: document.getElementById('rejectUnauthorized').checked,
     gitmoji: document.getElementById('gitmoji').checked,
+    prompt: document.getElementById('prompt').value,
   });
 }
 vscode.postMessage({ command: 'load' });

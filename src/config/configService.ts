@@ -32,6 +32,7 @@ export class ConfigService {
         gitlabToken: vsconfig.get<string>('gitlabToken'),
         rejectUnauthorized: vsconfig.get<boolean>('rejectUnauthorized', false),
         gitmoji: vsconfig.get<boolean>('gitmoji', false),
+        prompt: vsconfig.get<string>('prompt') || DEFAULT_AI_CONFIG.prompt,
       };
     }
 

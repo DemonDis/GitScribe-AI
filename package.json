@@ -125,6 +125,11 @@
           "type": "boolean",
           "default": false,
           "description": "Enable gitmoji in commit messages"
+        },
+        "gitscribe.prompt": {
+          "type": "string",
+          "default": "",
+          "description": "Custom prompt template for commit message generation. Use {diff} as placeholder for the diff content."
         }
       }
     }
