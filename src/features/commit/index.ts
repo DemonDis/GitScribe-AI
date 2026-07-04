@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { ConfigService } from '../../config/configService';
 import { AiService } from '../../services/aiService';
 import { GitService } from '../../services/gitService';
+import { t } from '../../i18n';
 
 const configService = new ConfigService();
 const aiService = new AiService();
@@ -10,7 +11,7 @@ export function registerCommitCommands(context: vscode.ExtensionContext): vscode
   const setupCommand = vscode.commands.registerCommand('gitScribe.setup', async () => {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     if (!workspaceFolder) {
-      vscode.window.showErrorMessage('No workspace folder found');
+      vscode.window.showErrorMessage(t('noWorkspaceFolder'));
       return;
     }
 
@@ -46,13 +47,13 @@ export function registerCommitCommands(context: vscode.ExtensionContext): vscode
     };
 
     configService.saveIlnskConfig(workspacePath, config as any);
-    vscode.window.showInformationMessage('GitScribe AI configured!');
+    vscode.window.showInformationMessage(t('gitScribeConfigured'));
   });
 
   const generateCommand = vscode.commands.registerCommand('gitScribe.generateCommit', async () => {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     if (!workspaceFolder) {
-      vscode.window.showErrorMessage('No workspace folder found');
+      vscode.window.showErrorMessage(t('noWorkspaceFolder'));
       return;
     }
 
@@ -69,11 +70,11 @@ export function registerCommitCommands(context: vscode.ExtensionContext): vscode
       const commitInfo = await gitService.getStagedDiff();
 
       if (!commitInfo || !commitInfo.diff) {
-        vscode.window.showWarningMessage('No changes found. Make some changes first.');
+        vscode.window.showWarningMessage(t('noChangesFound'));
         return;
       }
 
-      vscode.window.showInformationMessage('Generating commit message...');
+      vscode.window.showInformationMessage(t('generatingCommit'));
       const message = await aiService.generateCommitMessage(config, commitInfo.diff);
 
       try {
@@ -84,7 +85,7 @@ export function registerCommitCommands(context: vscode.ExtensionContext): vscode
             const repo = gitApi.repositories[0];
             if (repo.inputBox) {
               repo.inputBox.value = message;
-              vscode.window.showInformationMessage('Commit message added to SCM input!');
+              vscode.window.showInformationMessage(t('commitAddedToScm'));
               return;
             }
           }
@@ -94,9 +95,9 @@ export function registerCommitCommands(context: vscode.ExtensionContext): vscode
       }
 
       await vscode.env.clipboard.writeText(message);
-      vscode.window.showInformationMessage(`Commit message copied: ${message}`);
+      vscode.window.showInformationMessage(t('commitCopied').replace('{msg}', message));
     } catch (error: any) {
-      vscode.window.showErrorMessage(error.message || 'Failed to generate commit message');
+      vscode.window.showErrorMessage(error.message || t('failedToGenerateCommit'));
     }
   });
 

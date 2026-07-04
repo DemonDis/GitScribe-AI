@@ -185,7 +185,7 @@ export function registerReportCommands(context: vscode.ExtensionContext): vscode
         changes = await gitService.getChangesByCommits(fromCommit, toCommit);
       }
     } catch (e: any) {
-      vscode.window.showErrorMessage(`Error: ${e.message}`);
+      vscode.window.showErrorMessage(t('errorOccurred').replace('{msg}', e.message));
       return;
     }
 

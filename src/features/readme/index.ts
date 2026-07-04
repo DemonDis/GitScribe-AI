@@ -6,6 +6,7 @@ import { RepomixService } from '../../services/repomixService';
 import { AiService } from '../../services/aiService';
 import { TokenService } from '../../services/tokenService';
 import { GitService } from '../../services/gitService';
+import { t } from '../../i18n';
 
 const configService = new ConfigService();
 const repomixService = new RepomixService();
@@ -25,7 +26,7 @@ export function registerReadmeCommands(context: vscode.ExtensionContext): vscode
   const generateCommand = vscode.commands.registerCommand('gitScribe.generateReadme', async (promptFile?: string) => {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     if (!workspaceFolder) {
-      vscode.window.showErrorMessage('No workspace folder found');
+      vscode.window.showErrorMessage(t('noWorkspaceFolder'));
       return;
     }
 
@@ -35,32 +36,32 @@ export function registerReadmeCommands(context: vscode.ExtensionContext): vscode
     let config = configService.readConfig(workspacePath);
     if (!config) {
       configService.createIlnskConfig(workspacePath);
-      vscode.window.showWarningMessage('Created default .ilnsk config. Please configure and run again.');
+      vscode.window.showWarningMessage(t('createdDefaultConfig'));
       return;
     }
 
     if (!config.apiUrl || !config.apiKey || !config.model) {
-      vscode.window.showWarningMessage('Please configure settings first.');
+      vscode.window.showWarningMessage(t('configureFirstPrompt'));
       vscode.commands.executeCommand('gitScribe.openSettings');
       return;
     }
 
     try {
-      vscode.window.showInformationMessage('Running repomix...');
+      vscode.window.showInformationMessage(t('runningRepomix'));
 
       const outputPath = await repomixService.run(workspacePath);
-      vscode.window.showInformationMessage('Repomix completed');
+      vscode.window.showInformationMessage(t('repomixCompleted'));
 
       const repomixContent = repomixService.readOutput(outputPath);
       const tCount = tokenService.countForQwen(repomixContent);
-      vscode.window.showInformationMessage(`Token count: ${tCount.toLocaleString()}`);
+      vscode.window.showInformationMessage(t('tokenCount').replace('{count}', tCount.toLocaleString()));
 
       let promptType = getPromptContent(context, 'readme.md');
       if (promptFile) {
         promptType = getPromptContent(context, promptFile);
       }
 
-      vscode.window.showInformationMessage('Sending to AI...');
+      vscode.window.showInformationMessage(t('sendingToAi'));
       const readmeContent = await aiService.generateReadme(config, promptType, repomixContent);
 
       let outputFileName = 'README.md';
@@ -93,20 +94,20 @@ export function registerReadmeCommands(context: vscode.ExtensionContext): vscode
         fs.unlinkSync(outputPath);
       }
 
-      vscode.window.showInformationMessage(`${outputFileName} created successfully!`);
+      vscode.window.showInformationMessage(t('readmeCreated').replace('{file}', outputFileName));
 
       const doc = await vscode.workspace.openTextDocument(readmePath);
       await vscode.window.showTextDocument(doc);
 
     } catch (error: any) {
-      vscode.window.showErrorMessage(`Error: ${error.message}`);
+      vscode.window.showErrorMessage(t('errorOccurred').replace('{msg}', error.message));
     }
   });
 
   const updateCommand = vscode.commands.registerCommand('gitScribe.updateReadme', async () => {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     if (!workspaceFolder) {
-      vscode.window.showErrorMessage('No workspace folder found');
+      vscode.window.showErrorMessage(t('noWorkspaceFolder'));
       return;
     }
 
@@ -115,26 +116,26 @@ export function registerReadmeCommands(context: vscode.ExtensionContext): vscode
     let config = configService.readConfig(workspacePath);
     if (!config) {
       configService.createIlnskConfig(workspacePath);
-      vscode.window.showWarningMessage('Created default .ilnsk config. Please configure and run again.');
+      vscode.window.showWarningMessage(t('createdDefaultConfig'));
       return;
     }
 
     if (!config.apiUrl || !config.apiKey || !config.model) {
-      vscode.window.showWarningMessage('Please configure settings first.');
+      vscode.window.showWarningMessage(t('configureFirstPrompt'));
       vscode.commands.executeCommand('gitScribe.openSettings');
       return;
     }
 
     const readmePath = path.join(workspacePath, 'README.md');
     if (!fs.existsSync(readmePath)) {
-      vscode.window.showErrorMessage('README.md not found. Generate one first.');
+      vscode.window.showErrorMessage(t('readmeNotFound'));
       return;
     }
 
     const gitService = new GitService(workspacePath);
     const isGitRepo = await gitService.isGitRepository();
     if (!isGitRepo) {
-      vscode.window.showErrorMessage('Not a git repository');
+      vscode.window.showErrorMessage(t('notGitRepo'));
       return;
     }
 
@@ -142,7 +143,7 @@ export function registerReadmeCommands(context: vscode.ExtensionContext): vscode
 
     const hashMatch = currentReadme.match(/<!-- git-scribe-ai:\s*([a-f0-9]+)\s*-->/i);
     if (!hashMatch) {
-      vscode.window.showErrorMessage('README.md was not generated by GitScribe AI. Missing commit hash marker.');
+      vscode.window.showErrorMessage(t('noCommitHashMarker'));
       return;
     }
 
@@ -158,12 +159,13 @@ export function registerReadmeCommands(context: vscode.ExtensionContext): vscode
     const onlyReadmeChanged = allChangedFiles.length > 0 && allChangedFiles.every(f => f === 'README.md');
 
     if (!diff.hasChanges || onlyReadmeChanged || isUncommitted) {
+      const msg = `${t('readmeNotFromGitScribe')} ${baseRef.slice(0, 7)}.`;
       const action = await vscode.window.showWarningMessage(
-        `No code changes detected since ${baseRef.slice(0, 7)}. Force update anyway?`,
+        msg,
         { modal: true },
-        'Force Update',
+        t('updateAnyway'),
       );
-      if (action !== 'Force Update') return;
+      if (action !== t('updateAnyway')) return;
     }
 
     const DIFF_MAX_SIZE = parseInt(process.env.GITSCRIBE_DIFF_MAX_SIZE || '5000', 10);
@@ -185,16 +187,16 @@ ${readmeWithoutMarker}
 
 ${formattedDiff}`;
 
-      vscode.window.showInformationMessage('Using diff-only mode...');
+      vscode.window.showInformationMessage(t('usingDiffOnly'));
       readmeContent = await aiService.generateReadme(config, '', fullContext);
     } else {
-      vscode.window.showInformationMessage('Running repomix...');
+      vscode.window.showInformationMessage(t('runningRepomix'));
       const outputPath = await repomixService.run(workspacePath);
       let repomixContent = repomixService.readOutput(outputPath);
       repomixContent = repomixContent.replace(/<file\s+path="[^"]*README\.md"[^>]*>[\s\S]*?<\/file>\n*/gi, '');
       repomixContent = repomixContent.replace(/^.*README\.md.*\n/gm, '');
       const tCount = tokenService.countForQwen(repomixContent);
-      vscode.window.showInformationMessage(`Token count: ${tCount.toLocaleString()}`);
+      vscode.window.showInformationMessage(t('tokenCount').replace('{count}', tCount.toLocaleString()));
 
       readmeContent = await aiService.generateReadme(config, promptContent, repomixContent);
 
@@ -205,7 +207,7 @@ ${formattedDiff}`;
     const resultContent = readmeContent.trimEnd() + `\n\n<!-- git-scribe-ai: ${newCommitHash || baseRef} -->`;
     fs.writeFileSync(readmePath, resultContent);
 
-    vscode.window.showInformationMessage('README.md updated successfully!');
+    vscode.window.showInformationMessage(t('readmeUpdated'));
 
     const doc = await vscode.workspace.openTextDocument(readmePath);
     await vscode.window.showTextDocument(doc);

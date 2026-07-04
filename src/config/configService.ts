@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { AiConfig, DEFAULT_AI_CONFIG } from './types';
 import { DEFAULT_REPOMIX_CONFIG } from './repomix';
+import { t } from '../i18n';
 
 export class ConfigService {
   getIlnskPath(workspacePath: string): string {
@@ -48,11 +49,11 @@ export class ConfigService {
         if (config.apiUrl && config.apiKey && config.model) {
           return config;
         }
-        vscode.window.showWarningMessage('Config incomplete. Please fill apiUrl, apiKey, and model in settings or .ilnsk');
+        vscode.window.showWarningMessage(t('configIncomplete'));
         return null;
       }
     } catch (error) {
-      vscode.window.showErrorMessage(`Error reading .ilnsk: ${error}`);
+      vscode.window.showErrorMessage(`${t('errorReadingConfig')} ${error}`);
     }
     return null;
   }
@@ -60,7 +61,7 @@ export class ConfigService {
   createIlnskConfig(workspacePath: string): void {
     const configPath = this.getIlnskPath(workspacePath);
     fs.writeFileSync(configPath, JSON.stringify(DEFAULT_AI_CONFIG, null, 2));
-    vscode.window.showInformationMessage(`Config template created at ${configPath}. Please edit it or use Settings panel.`);
+    vscode.window.showInformationMessage(t('configTemplateCreated').replace('{path}', configPath));
   }
 
   saveIlnskConfig(workspacePath: string, config: AiConfig): void {
