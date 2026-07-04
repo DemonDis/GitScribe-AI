@@ -1,13 +1,69 @@
 import * as vscode from 'vscode';
 
+type Lang = 'en' | 'ru';
+
+const T: Record<Lang, Record<string, string>> = {
+  en: {
+    title: 'GitScribe AI Settings',
+    save: 'Save',
+    aiProvider: 'AI Provider',
+    gitlab: 'GitLab',
+    commitPrompt: 'Commit Prompt',
+    promptTemplate: 'Prompt template',
+    options: 'Options',
+    apiUrl: 'API URL',
+    apiKey: 'API Key',
+    model: 'Model',
+    gitlabUrl: 'GitLab URL',
+    gitlabToken: 'GitLab Token',
+    tlsVerify: 'Disable TLS certificate verification (rejectUnauthorized)',
+    gitmoji: 'Use gitmoji in commit messages',
+    settingsSaved: 'Settings saved!',
+    language: 'Language',
+    promptPlaceholder: 'Generate a concise git commit message (max 72 characters for title). Analyze this diff and create a semantic commit message:\n\n{diff}\n\nReturn ONLY the commit message, no explanation.',
+    apiUrlPlaceholder: 'https://api.openai.com/v1',
+    apiKeyPlaceholder: 'sk-...',
+    modelPlaceholder: 'gpt-4o, deepseek-chat, claude-3-sonnet',
+    gitlabUrlPlaceholder: 'https://gitlab.com',
+    gitlabTokenPlaceholder: 'glpat-...',
+  },
+  ru: {
+    title: 'GitScribe AI — настройки',
+    save: 'Сохранить',
+    aiProvider: 'AI провайдер',
+    gitlab: 'GitLab',
+    commitPrompt: 'Промт коммита',
+    promptTemplate: 'Шаблон промта',
+    options: 'Опции',
+    apiUrl: 'API URL',
+    apiKey: 'API Key',
+    model: 'Модель',
+    gitlabUrl: 'GitLab URL',
+    gitlabToken: 'GitLab токен',
+    tlsVerify: 'Отключить проверку TLS сертификата (rejectUnauthorized)',
+    gitmoji: 'Использовать gitmoji в коммитах',
+    settingsSaved: 'Настройки сохранены!',
+    language: 'Язык',
+    promptPlaceholder: 'Generate a concise git commit message (max 72 characters for title). Analyze this diff and create a semantic commit message:\n\n{diff}\n\nReturn ONLY the commit message, no explanation.',
+    apiUrlPlaceholder: 'https://api.openai.com/v1',
+    apiKeyPlaceholder: 'sk-...',
+    modelPlaceholder: 'gpt-4o, deepseek-chat, claude-3-sonnet',
+    gitlabUrlPlaceholder: 'https://gitlab.com',
+    gitlabTokenPlaceholder: 'glpat-...',
+  },
+};
+
 export class SettingsPanel {
   public static currentPanel: SettingsPanel | undefined;
   private readonly _panel: vscode.WebviewPanel;
   private _disposables: vscode.Disposable[] = [];
+  private _lang: Lang = 'en';
 
-  private constructor(panel: vscode.WebviewPanel, context: vscode.ExtensionContext) {
+  private constructor(panel: vscode.WebviewPanel) {
     this._panel = panel;
-    this._panel.webview.html = this._getHtml();
+    const cfg = vscode.workspace.getConfiguration('gitscribe');
+    this._lang = (cfg.get<string>('language') as Lang) || 'en';
+    this._panel.webview.html = this._getHtml(this._lang);
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
     this._panel.webview.onDidReceiveMessage(async (msg) => {
       switch (msg.command) {
@@ -17,11 +73,16 @@ export class SettingsPanel {
         case 'load':
           this._loadSettings();
           break;
+        case 'setLang':
+          this._lang = msg.lang as Lang;
+          await vscode.workspace.getConfiguration('gitscribe').update('language', this._lang, vscode.ConfigurationTarget.Global);
+          this._panel.webview.html = this._getHtml(this._lang);
+          break;
       }
     }, null, this._disposables);
   }
 
-  public static createOrShow(context: vscode.ExtensionContext) {
+  public static createOrShow() {
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
@@ -39,7 +100,7 @@ export class SettingsPanel {
       { enableScripts: true }
     );
 
-    SettingsPanel.currentPanel = new SettingsPanel(panel, context);
+    SettingsPanel.currentPanel = new SettingsPanel(panel);
   }
 
   private _loadSettings() {
@@ -55,6 +116,7 @@ export class SettingsPanel {
         rejectUnauthorized: config.get('rejectUnauthorized', false),
         gitmoji: config.get('gitmoji', false),
         prompt: config.get('prompt', ''),
+        language: config.get('language', 'en'),
       }
     });
   }
@@ -69,12 +131,19 @@ export class SettingsPanel {
     await config.update('rejectUnauthorized', msg.rejectUnauthorized, vscode.ConfigurationTarget.Global);
     await config.update('gitmoji', msg.gitmoji, vscode.ConfigurationTarget.Global);
     await config.update('prompt', msg.prompt, vscode.ConfigurationTarget.Global);
-    vscode.window.showInformationMessage('Settings saved!');
+    await config.update('language', msg.language, vscode.ConfigurationTarget.Global);
+    this._lang = msg.language as Lang;
+    vscode.window.showInformationMessage(T[this._lang].settingsSaved);
   }
 
-  private _getHtml(): string {
+  private _tr(key: string): string {
+    return T[this._lang][key] || key;
+  }
+
+  private _getHtml(lang: Lang): string {
+    this._lang = lang;
     return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${lang}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -96,7 +165,8 @@ label {
 }
 input[type="text"],
 input[type="password"],
-textarea {
+textarea,
+select {
   width: 100%;
   padding: 6px 10px;
   border: 1px solid var(--vscode-input-border);
@@ -114,7 +184,8 @@ textarea {
   line-height: 1.5;
 }
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
   outline: 1px solid var(--vscode-focusBorder);
   border-color: var(--vscode-focusBorder);
 }
@@ -146,6 +217,23 @@ h2 {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
+  gap: 12px;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lang-select {
+  width: auto;
+  min-width: 100px;
+  padding: 3px 8px;
+  font-size: 12px;
 }
 .btn-sm {
   width: auto;
@@ -174,70 +262,74 @@ h2 {
 </head>
 <body>
 <div class="header">
-<h2>GitScribe AI Settings</h2>
-<button class="btn-sm" onclick="save()">Save</button>
+<div class="header-left">
+<h2>${this._tr('title')}</h2>
 </div>
-
-<div class="section">
-<div class="section-title">AI Provider</div>
-<div class="form-group">
-<label for="apiUrl">API URL</label>
-<input type="text" id="apiUrl" placeholder="https://api.openai.com/v1" />
-</div>
-<div class="form-group">
-<label for="apiKey">API Key</label>
-<input type="password" id="apiKey" placeholder="sk-..." />
-</div>
-<div class="form-group">
-<label for="model">Model</label>
-<input type="text" id="model" placeholder="gpt-4o, deepseek-chat, claude-3-sonnet" />
+<div class="header-right">
+<select class="lang-select" id="language" onchange="setLang()">
+<option value="en" ${lang === 'en' ? 'selected' : ''}>English</option>
+<option value="ru" ${lang === 'ru' ? 'selected' : ''}>Русский</option>
+</select>
+<button class="btn-sm" onclick="save()">${this._tr('save')}</button>
 </div>
 </div>
 
 <div class="section">
-<div class="section-title">GitLab</div>
+<div class="section-title">${this._tr('aiProvider')}</div>
 <div class="form-group">
-<label for="gitlabUrl">GitLab URL</label>
-<input type="text" id="gitlabUrl" placeholder="https://gitlab.com" />
+<label for="apiUrl">${this._tr('apiUrl')}</label>
+<input type="text" id="apiUrl" placeholder="${this._tr('apiUrlPlaceholder')}" />
 </div>
 <div class="form-group">
-<label for="gitlabToken">GitLab Token</label>
-<input type="password" id="gitlabToken" placeholder="glpat-..." />
+<label for="apiKey">${this._tr('apiKey')}</label>
+<input type="password" id="apiKey" placeholder="${this._tr('apiKeyPlaceholder')}" />
+</div>
+<div class="form-group">
+<label for="model">${this._tr('model')}</label>
+<input type="text" id="model" placeholder="${this._tr('modelPlaceholder')}" />
 </div>
 </div>
 
 <div class="section">
-<div class="section-title">Commit Prompt</div>
+<div class="section-title">${this._tr('gitlab')}</div>
 <div class="form-group">
-<label for="prompt">Prompt template</label>
-<textarea id="prompt">Generate a concise git commit message (max 72 characters for title). Analyze this diff and create a semantic commit message:
-
-{diff}
-
-Return ONLY the commit message, no explanation.</textarea>
+<label for="gitlabUrl">${this._tr('gitlabUrl')}</label>
+<input type="text" id="gitlabUrl" placeholder="${this._tr('gitlabUrlPlaceholder')}" />
+</div>
+<div class="form-group">
+<label for="gitlabToken">${this._tr('gitlabToken')}</label>
+<input type="password" id="gitlabToken" placeholder="${this._tr('gitlabTokenPlaceholder')}" />
 </div>
 </div>
 
 <div class="section">
-<div class="section-title">Options</div>
+<div class="section-title">${this._tr('commitPrompt')}</div>
+<div class="form-group">
+<label for="prompt">${this._tr('promptTemplate')}</label>
+<textarea id="prompt">${this._tr('promptPlaceholder')}</textarea>
+</div>
+</div>
+
+<div class="section">
+<div class="section-title">${this._tr('options')}</div>
 <div class="form-group checkbox-group">
 <input type="checkbox" id="rejectUnauthorized" />
-<label for="rejectUnauthorized">Disable TLS certificate verification (rejectUnauthorized)</label>
+<label for="rejectUnauthorized">${this._tr('tlsVerify')}</label>
 </div>
 <div class="form-group checkbox-group">
 <input type="checkbox" id="gitmoji" />
-<label for="gitmoji">Use gitmoji in commit messages</label>
+<label for="gitmoji">${this._tr('gitmoji')}</label>
 </div>
 </div>
 
-<button class="btn" onclick="save()">Save</button>
+<button class="btn" onclick="save()">${this._tr('save')}</button>
 
 <script>
 const vscode = acquireVsCodeApi();
 
-document.getElementById('apiUrl').addEventListener('input', () => vscode.postMessage({ command: 'preview' }));
-document.getElementById('apiKey').addEventListener('input', () => {});
-document.getElementById('model').addEventListener('input', () => {});
+function setLang() {
+  vscode.postMessage({ command: 'setLang', lang: document.getElementById('language').value });
+}
 
 window.addEventListener('message', (event) => {
   const msg = event.data;
@@ -249,6 +341,7 @@ window.addEventListener('message', (event) => {
     document.getElementById('gitlabToken').value = msg.values.gitlabToken || '';
     document.getElementById('rejectUnauthorized').checked = msg.values.rejectUnauthorized || false;
     document.getElementById('gitmoji').checked = msg.values.gitmoji || false;
+    document.getElementById('language').value = msg.values.language || 'en';
     if (msg.values.prompt) {
       document.getElementById('prompt').value = msg.values.prompt;
     }
@@ -265,6 +358,7 @@ function save() {
     rejectUnauthorized: document.getElementById('rejectUnauthorized').checked,
     gitmoji: document.getElementById('gitmoji').checked,
     prompt: document.getElementById('prompt').value,
+    language: document.getElementById('language').value,
   });
 }
 vscode.postMessage({ command: 'load' });

@@ -3,6 +3,7 @@ import { ConfigService } from '../../config/configService';
 import { AiService } from '../../services/aiService';
 import { GitService } from '../../services/gitService';
 import { getChangesFromGitLab } from '../../services/gitlabService';
+import { t } from '../../i18n';
 
 const configService = new ConfigService();
 const aiService = new AiService();
@@ -93,7 +94,7 @@ export function registerReportCommands(context: vscode.ExtensionContext): vscode
       vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || ''
     );
     if (!config) {
-      vscode.window.showErrorMessage('Please configure settings first');
+      vscode.window.showErrorMessage(t('configureFirst'));
       return;
     }
 
@@ -102,15 +103,15 @@ export function registerReportCommands(context: vscode.ExtensionContext): vscode
 
     type ModeItem = { label: string; value: string };
     const modeItems: ModeItem[] = [
-      { label: '$(files) Uncommitted changes', value: 'uncommitted' },
-      { label: '$(clock) Commits today', value: 'today' },
-      { label: '$(calendar) Commits by date range', value: 'date' },
-      { label: '$(git-commit) Changes between commits', value: 'commits' },
-      { label: '$(server) GitLab commits (API)', value: 'gitlab' },
+      { label: `$(files) ${t('uncommitted')}`, value: 'uncommitted' },
+      { label: `$(clock) ${t('today')}`, value: 'today' },
+      { label: `$(calendar) ${t('dateRange')}`, value: 'date' },
+      { label: `$(git-commit) ${t('betweenCommits')}`, value: 'commits' },
+      { label: `$(server) ${t('gitlabCommits')}`, value: 'gitlab' },
     ];
 
     const picked = await vscode.window.showQuickPick(modeItems, {
-      placeHolder: 'Select changes source for report',
+      placeHolder: t('selectSource'),
     });
     if (!picked) return;
 
@@ -124,36 +125,36 @@ export function registerReportCommands(context: vscode.ExtensionContext): vscode
         changes = await gitService.getChangesByDateRange(today, today, true);
       } else if (picked.value === 'date') {
         const fromDate = await vscode.window.showInputBox({
-          prompt: 'Start date (e.g., 2024-01-01)',
+          prompt: t('startDate'),
           placeHolder: 'YYYY-MM-DD',
-          validateInput: (v: string | undefined) => (v ? null : 'Enter date'),
+          validateInput: (v: string | undefined) => (v ? null : t('enterDate')),
         });
         if (!fromDate) return;
 
         const toDate = await vscode.window.showInputBox({
-          prompt: 'End date (e.g., 2024-12-31)',
+          prompt: t('endDate'),
           placeHolder: 'YYYY-MM-DD',
-          validateInput: (v: string | undefined) => (v ? null : 'Enter date'),
+          validateInput: (v: string | undefined) => (v ? null : t('enterDate')),
         });
         if (!toDate) return;
 
         changes = await gitService.getChangesByDateRange(fromDate, toDate, true);
       } else if (picked.value === 'gitlab') {
         if (!config.gitlabToken) {
-          vscode.window.showWarningMessage('Please set gitlabToken in .ilnsk');
+          vscode.window.showWarningMessage(t('gitlabTokenMissing'));
           return;
         }
         const fromDate = await vscode.window.showInputBox({
-          prompt: 'Start date (e.g., 2024-01-01)',
+          prompt: t('startDate'),
           placeHolder: 'YYYY-MM-DD',
-          validateInput: (v: string | undefined) => (v ? null : 'Enter date'),
+          validateInput: (v: string | undefined) => (v ? null : t('enterDate')),
         });
         if (!fromDate) return;
 
         const toDate = await vscode.window.showInputBox({
-          prompt: 'End date (e.g., 2024-12-31)',
+          prompt: t('endDate'),
           placeHolder: 'YYYY-MM-DD',
-          validateInput: (v: string | undefined) => (v ? null : 'Enter date'),
+          validateInput: (v: string | undefined) => (v ? null : t('enterDate')),
         });
         if (!toDate) return;
 
@@ -168,16 +169,16 @@ export function registerReportCommands(context: vscode.ExtensionContext): vscode
         );
       } else {
         const fromCommit = await vscode.window.showInputBox({
-          prompt: 'Start commit (hash or branch)',
+          prompt: t('startCommit'),
           placeHolder: 'e.g., abc123 or main~5',
-          validateInput: (v: string | undefined) => (v ? null : 'Enter commit'),
+          validateInput: (v: string | undefined) => (v ? null : t('enterCommit')),
         });
         if (!fromCommit) return;
 
         const toCommit = await vscode.window.showInputBox({
-          prompt: 'End commit (hash or branch)',
+          prompt: t('endCommit'),
           placeHolder: 'e.g., def456 or feature/foo',
-          validateInput: (v: string | undefined) => (v ? null : 'Enter commit'),
+          validateInput: (v: string | undefined) => (v ? null : t('enterCommit')),
         });
         if (!toCommit) return;
 
@@ -196,7 +197,7 @@ export function registerReportCommands(context: vscode.ExtensionContext): vscode
     vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
-        title: 'Generating AI report...',
+        title: t('generatingReport'),
         cancellable: false,
       },
       async () => {

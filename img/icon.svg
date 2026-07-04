@@ -1,22 +1,129 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <!-- Квадрат с закругленными углами (фон) -->
-  <rect x="8" y="8" width="112" height="112" rx="24" ry="24" fill="#4A90D9"/>
-  
-  <!-- Круг с двумя половинами -->
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 512 512" fill="none" style="max-width: 512px;">
+  <title>AI Git README Lab Plugin Icon</title>
+  <desc>Plugin icon combining Git workflow, AI README generation and innovation laboratory theme.</desc>
   <defs>
-    <clipPath id="circleClip">
-      <circle cx="64" cy="64" r="32"/>
+    <linearGradient id="bgGradient" x1="64" y1="32" x2="448" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111827"/>
+      <stop offset="0.5" stop-color="#172554"/>
+      <stop offset="1" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="labGradient" x1="140" y1="120" x2="380" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#67E8F9"/>
+      <stop offset="0.5" stop-color="#22D3EE"/>
+      <stop offset="1" stop-color="#A78BFA"/>
+    </linearGradient>
+    <linearGradient id="liquidGradient" x1="128" y1="286" x2="384" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#34D399"/>
+      <stop offset="0.55" stop-color="#22D3EE"/>
+      <stop offset="1" stop-color="#818CF8"/>
+    </linearGradient>
+    <linearGradient id="docGradient" x1="176" y1="220" x2="352" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FAFC"/>
+      <stop offset="1" stop-color="#DFFBFF"/>
+    </linearGradient>
+    <linearGradient id="aiGradient" x1="208" y1="314" x2="300" y2="374" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7C3AED"/>
+      <stop offset="1" stop-color="#06B6D4"/>
+    </linearGradient>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <clipPath id="flaskClip">
+      <path d="M221 104H291V185L374 352C388 381 367 414 335 414H177C145 414 124 381 138 352L221 185V104Z"/>
     </clipPath>
   </defs>
   
-  <!-- Левая половина круга (светлая) -->
-  <circle cx="64" cy="64" r="32" fill="#7AB8FF" clip-path="url(#circleClip)"/>
-  <rect x="64" y="32" width="32" height="64" fill="#4A90D9" clip-path="url(#circleClip)"/>
+  <rect x="24" y="24" width="464" height="464" rx="96" fill="url(#bgGradient)"/>
+  <rect x="24" y="24" width="464" height="464" rx="96" stroke="#334155" stroke-width="2"/>
   
-  <!-- Правая половина круга (темная) -->
-  <circle cx="64" cy="64" r="32" fill="#2E5C8A"/>
-  <rect x="32" y="32" width="32" height="64" fill="#7AB8FF" clip-path="url(#circleClip)"/>
+  <circle cx="256" cy="270" r="178" fill="#22D3EE" opacity="0.08"/>
+  <circle cx="350" cy="150" r="92" fill="#A78BFA" opacity="0.13"/>
+  <circle cx="150" cy="352" r="90" fill="#34D399" opacity="0.1"/>
   
-  <!-- Обводка круга -->
-  <circle cx="64" cy="64" r="32" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+  <g opacity="0.25" stroke="#94A3B8" stroke-width="2" stroke-linecap="round">
+    <path d="M92 122H154"/>
+    <path d="M154 122V86H210"/>
+    <path d="M388 108H340V76"/>
+    <path d="M414 346H374V386H326"/>
+    <path d="M90 390H144V424H202"/>
+    <circle cx="214" cy="86" r="4" fill="#94A3B8"/>
+    <circle cx="340" cy="76" r="4" fill="#94A3B8"/>
+    <circle cx="326" cy="386" r="4" fill="#94A3B8"/>
+    <circle cx="202" cy="424" r="4" fill="#94A3B8"/>
+  </g>
+  
+  <g filter="url(#glow)">
+    <path d="M130 158V260C130 292 156 318 188 318H226" stroke="#F97316" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M130 214C130 178 159 149 195 149H324" stroke="#F97316" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="130" cy="158" r="18" fill="#0F172A" stroke="#F97316" stroke-width="9"/>
+    <circle cx="130" cy="214" r="15" fill="#0F172A" stroke="#F97316" stroke-width="8"/>
+    <circle cx="324" cy="149" r="18" fill="#0F172A" stroke="#F97316" stroke-width="9"/>
+  </g>
+  
+  <g filter="url(#softShadow)">
+    <path d="M221 104H291V185L374 352C388 381 367 414 335 414H177C145 414 124 381 138 352L221 185V104Z" fill="#0B1220" opacity="0.36"/>
+    <g clip-path="url(#flaskClip)">
+      <path d="M118 316C158 292 199 332 244 310C295 286 333 323 392 298V432H118V316Z" fill="url(#liquidGradient)" opacity="0.88"/>
+      <circle cx="198" cy="352" r="10" fill="#ECFEFF" opacity="0.75"/>
+      <circle cx="309" cy="335" r="7" fill="#ECFEFF" opacity="0.7"/>
+      <circle cx="278" cy="382" r="5" fill="#ECFEFF" opacity="0.65"/>
+      <circle cx="226" cy="288" r="6" fill="#ECFEFF" opacity="0.55"/>
+    </g>
+    <path d="M221 104H291V185L374 352C388 381 367 414 335 414H177C145 414 124 381 138 352L221 185V104Z" stroke="url(#labGradient)" stroke-width="8" stroke-linejoin="round"/>
+    <path d="M213 104H299" stroke="#C4B5FD" stroke-width="12" stroke-linecap="round"/>
+    <path d="M224 137H288" stroke="#67E8F9" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+  </g>
+  
+  <g filter="url(#softShadow)">
+    <rect x="174" y="224" width="168" height="188" rx="24" fill="url(#docGradient)"/>
+    <path d="M306 224L342 260H316C310.477 260 306 255.523 306 250V224Z" fill="#BAE6FD"/>
+    <rect x="174" y="224" width="168" height="188" rx="24" stroke="#FFFFFF" stroke-width="3"/>
+    <text x="204" y="271" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="800" fill="#0F172A">README</text>
+    <rect x="204" y="292" width="96" height="8" rx="4" fill="#38BDF8"/>
+    <rect x="204" y="309" width="112" height="7" rx="3.5" fill="#CBD5E1"/>
+    <rect x="204" y="324" width="84" height="7" rx="3.5" fill="#CBD5E1"/>
+    <rect x="204" y="389" width="110" height="7" rx="3.5" fill="#94A3B8" opacity="0.7"/>
+    
+    <g>
+      <rect x="214" y="338" width="88" height="42" rx="13" fill="url(#aiGradient)"/>
+      <text x="239" y="366" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="900" fill="#FFFFFF">AI</text>
+      <g stroke="#06B6D4" stroke-width="3" stroke-linecap="round">
+        <path d="M224 332V324"/>
+        <path d="M242 332V324"/>
+        <path d="M274 332V324"/>
+        <path d="M292 332V324"/>
+        <path d="M224 394V386"/>
+        <path d="M242 394V386"/>
+        <path d="M274 394V386"/>
+        <path d="M292 394V386"/>
+      </g>
+    </g>
+  </g>
+  
+  <g opacity="0.95">
+    <path d="M350 202L386 232L362 270L318 260L312 216L350 202Z" stroke="#A78BFA" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="350" cy="202" r="9" fill="#A78BFA"/>
+    <circle cx="386" cy="232" r="9" fill="#22D3EE"/>
+    <circle cx="362" cy="270" r="9" fill="#34D399"/>
+    <circle cx="318" cy="260" r="9" fill="#F8FAFC"/>
+    <circle cx="312" cy="216" r="9" fill="#F97316"/>
+  </g>
+  
+  <g filter="url(#glow)">
+    <path d="M398 90L407 112L430 121L407 130L398 153L389 130L366 121L389 112L398 90Z" fill="#FDE68A"/>
+    <path d="M105 300L111 315L126 321L111 327L105 342L99 327L84 321L99 315L105 300Z" fill="#67E8F9"/>
+    <path d="M374 390L379 402L392 407L379 412L374 425L369 412L356 407L369 402L374 390Z" fill="#C4B5FD"/>
+  </g>
+  
+  <g stroke="#E0F2FE" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9">
+    <path d="M104 250L84 270L104 290"/>
+    <path d="M408 250L428 270L408 290"/>
+  </g>
 </svg>
