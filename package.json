@@ -151,6 +151,16 @@
           "default": {},
           "description": "Custom overrides for prompt files. Keys are file paths (e.g. 'readme.md'), values are prompt content."
         },
+        "gitscribe.reportAuthorOnly": {
+          "type": "boolean",
+          "default": true,
+          "description": "Report: show only my commits (filter by git config user.email)"
+        },
+        "gitscribe.reportAuthorFilter": {
+          "type": "string",
+          "default": "",
+          "description": "Report: show only commits by this author email (leave empty for all commits)"
+        },
         "gitscribe.language": {
           "type": "string",
           "default": "en",

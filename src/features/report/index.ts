@@ -6,6 +6,7 @@ import { AiService } from '../../services/aiService';
 import { GitService } from '../../services/gitService';
 import { getChangesFromGitLab } from '../../services/gitlabService';
 import { getChangesFromGitHub } from '../../services/githubService';
+import { pickDate, pickDateRange } from '../../services/datePicker';
 import { t } from '../../i18n';
 
 const configService = new ConfigService();
@@ -53,14 +54,9 @@ function mdToHtml(text: string): string {
   return out.join('\n');
 }
 
-function showReportPanel(report: string) {
-  const panel = vscode.window.createWebviewPanel(
-    'gitScribeReport',
-    'GitScribe AI — Report',
-    vscode.ViewColumn.One,
-    {}
-  );
+let reportPanel: vscode.WebviewPanel | undefined;
 
+function showReportPanel(report: string) {
   const content = mdToHtml(report);
 
   const html = `<!DOCTYPE html>
@@ -88,40 +84,75 @@ function showReportPanel(report: string) {
 </body>
 </html>`;
 
-  panel.webview.html = html;
+  if (reportPanel) {
+    reportPanel.reveal(vscode.ViewColumn.One);
+  } else {
+    reportPanel = vscode.window.createWebviewPanel(
+      'gitScribeReport',
+      'GitScribe AI — Report',
+      vscode.ViewColumn.One,
+      {}
+    );
+    reportPanel.onDidDispose(() => { reportPanel = undefined; });
+  }
+
+  reportPanel.webview.html = html;
 }
 
-function getReportPrompt(context: vscode.ExtensionContext): string {
+function getReportPrompt(context: vscode.ExtensionContext, source: string): string {
+  const promptFile = 'report.md';
   const customPrompts = vscode.workspace.getConfiguration('gitscribe').get<Record<string, string>>('customPrompts', {});
-  if (customPrompts['report.md']) {
-    return customPrompts['report.md'];
+  if (customPrompts[promptFile]) {
+    return customPrompts[promptFile];
   }
-  const promptsPath = path.join(context.extensionPath, 'assets', 'prompts', 'report.md');
-  return fs.readFileSync(promptsPath, 'utf-8');
+  const promptsPath = path.join(context.extensionPath, 'assets', 'prompts', promptFile);
+  let prompt = fs.readFileSync(promptsPath, 'utf-8');
+  const sourceLabel = source === 'github' ? 'GitHub' : 'GitLab';
+  return prompt.replace('{source}', sourceLabel);
 }
 
 export function registerReportCommands(context: vscode.ExtensionContext): vscode.Disposable[] {
-  const generateCommand = vscode.commands.registerCommand('gitScribe.generateReport', async () => {
-    const config = configService.readConfig(
-      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || ''
-    );
+  const generateCommand = vscode.commands.registerCommand('gitScribe.generateReport', async (presetSource?: string) => {
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
+    const config = configService.readConfig(workspaceRoot);
     if (!config) {
       vscode.window.showErrorMessage(t('configureFirst'));
       return;
     }
 
-    const workspaceRoot = vscode.workspace.workspaceFolders![0].uri.fsPath;
+    if (!workspaceRoot) {
+      vscode.window.showErrorMessage(t('noWorkspaceFolder'));
+      return;
+    }
     const gitService = new GitService(workspaceRoot);
 
+    const cfg = vscode.workspace.getConfiguration('gitscribe');
+    const authorOnly = cfg.get<boolean>('reportAuthorOnly', true);
+    const authorFilter = cfg.get<string>('reportAuthorFilter', '');
+    let authorEmail: string | undefined;
+    if (authorOnly) {
+      try { authorEmail = await gitService.getGitAuthorEmail(); } catch {}
+    } else if (authorFilter) {
+      authorEmail = authorFilter;
+    }
+
     type ModeItem = { label: string; value: string };
-    const modeItems: ModeItem[] = [
+    const baseModeItems: ModeItem[] = [
       { label: `$(files) ${t('uncommitted')}`, value: 'uncommitted' },
       { label: `$(clock) ${t('today')}`, value: 'today' },
+      { label: `$(calendar) ${t('specificDate')}`, value: 'specificDate' },
       { label: `$(calendar) ${t('dateRange')}`, value: 'date' },
       { label: `$(git-commit) ${t('betweenCommits')}`, value: 'commits' },
-      { label: `$(server) ${t('gitlabCommitsSource')}`, value: 'gitlab' },
-      { label: `$(server) ${t('githubCommitsSource')}`, value: 'github' },
     ];
+
+    const modeItems = presetSource === 'gitlab'
+      ? [...baseModeItems, { label: `$(server) ${t('gitlabCommitsSource')}`, value: 'gitlab' }]
+      : presetSource === 'github'
+      ? [...baseModeItems, { label: `$(server) ${t('githubCommitsSource')}`, value: 'github' }]
+      : [...baseModeItems,
+        { label: `$(server) ${t('gitlabCommitsSource')}`, value: 'gitlab' },
+        { label: `$(server) ${t('githubCommitsSource')}`, value: 'github' },
+      ];
 
     const picked = await vscode.window.showQuickPick(modeItems, {
       placeHolder: t('selectSource'),
@@ -135,76 +166,45 @@ export function registerReportCommands(context: vscode.ExtensionContext): vscode
         changes = await gitService.getUncommittedChanges();
       } else if (picked.value === 'today') {
         const today = new Date().toISOString().split('T')[0];
-        changes = await gitService.getChangesByDateRange(today, today, true);
+        changes = await gitService.getChangesByDateRange(today, today, authorEmail);
+      } else if (picked.value === 'specificDate') {
+        const date = await pickDate(t('enterDate'));
+        if (!date) return;
+        changes = await gitService.getChangesByDateRange(date, date, authorEmail);
       } else if (picked.value === 'date') {
-        const fromDate = await vscode.window.showInputBox({
-          prompt: t('startDate'),
-          placeHolder: 'YYYY-MM-DD',
-          validateInput: (v: string | undefined) => (v ? null : t('enterDate')),
-        });
-        if (!fromDate) return;
-
-        const toDate = await vscode.window.showInputBox({
-          prompt: t('endDate'),
-          placeHolder: 'YYYY-MM-DD',
-          validateInput: (v: string | undefined) => (v ? null : t('enterDate')),
-        });
-        if (!toDate) return;
-
-        changes = await gitService.getChangesByDateRange(fromDate, toDate, true);
+        const range = await pickDateRange(t('dateRange'));
+        if (!range) return;
+        changes = await gitService.getChangesByDateRange(range.from, range.to, authorEmail);
       } else if (picked.value === 'gitlab') {
         if (!config.gitlabToken) {
           vscode.window.showWarningMessage(t('gitlabTokenMissing'));
           return;
         }
-        const fromDate = await vscode.window.showInputBox({
-          prompt: t('startDate'),
-          placeHolder: 'YYYY-MM-DD',
-          validateInput: (v: string | undefined) => (v ? null : t('enterDate')),
-        });
-        if (!fromDate) return;
-
-        const toDate = await vscode.window.showInputBox({
-          prompt: t('endDate'),
-          placeHolder: 'YYYY-MM-DD',
-          validateInput: (v: string | undefined) => (v ? null : t('enterDate')),
-        });
-        if (!toDate) return;
-
+        const range = await pickDateRange(t('dateRange'));
+        if (!range) return;
         changes = await getChangesFromGitLab(
           config.gitlabUrl || 'https://gitlab.com',
           config.gitlabToken,
           gitService,
-          fromDate,
-          toDate,
+          range.from,
+          range.to,
           config.rejectUnauthorized ?? false,
-          true
+          authorEmail
         );
       } else if (picked.value === 'github') {
         if (!config.githubToken) {
           vscode.window.showWarningMessage(t('githubTokenMissing'));
           return;
         }
-        const fromDate = await vscode.window.showInputBox({
-          prompt: t('startDate'),
-          placeHolder: 'YYYY-MM-DD',
-          validateInput: (v: string | undefined) => (v ? null : t('enterDate')),
-        });
-        if (!fromDate) return;
-
-        const toDate = await vscode.window.showInputBox({
-          prompt: t('endDate'),
-          placeHolder: 'YYYY-MM-DD',
-          validateInput: (v: string | undefined) => (v ? null : t('enterDate')),
-        });
-        if (!toDate) return;
+        const range = await pickDateRange(t('dateRange'));
+        if (!range) return;
 
         changes = await getChangesFromGitHub(
           config.githubToken,
           gitService,
-          fromDate,
-          toDate,
-          true
+          range.from,
+          range.to,
+          authorEmail
         );
       } else {
         const fromCommit = await vscode.window.showInputBox({
@@ -233,6 +233,19 @@ export function registerReportCommands(context: vscode.ExtensionContext): vscode
       return;
     }
 
+    let reportSource = presetSource || picked.value;
+    if (reportSource !== 'gitlab' && reportSource !== 'github') {
+      const sourceItems: ModeItem[] = [
+        { label: `$(server) GitLab`, value: 'gitlab' },
+        { label: `$(server) GitHub`, value: 'github' },
+      ];
+      const pickedSource = await vscode.window.showQuickPick(sourceItems, {
+        placeHolder: t('selectSource'),
+      });
+      if (!pickedSource) return;
+      reportSource = pickedSource.value;
+    }
+
     vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
@@ -241,7 +254,7 @@ export function registerReportCommands(context: vscode.ExtensionContext): vscode
       },
       async () => {
         try {
-          const reportPrompt = getReportPrompt(context);
+          const reportPrompt = getReportPrompt(context, reportSource);
           const report = await aiService.generateReport(config, changes, reportPrompt);
           const authorName = await gitService.getGitAuthorName();
           const now = new Date();

@@ -96,18 +96,9 @@ export async function getChangesFromGitLab(
   since: string,
   until: string,
   rejectUnauthorized: boolean = false,
-  authorOnly: boolean = false
+  authorEmail?: string
 ): Promise<string> {
   const projectPath = await getProjectPath(gitService);
-
-  let authorEmail: string | undefined;
-  if (authorOnly) {
-    try {
-      authorEmail = await gitService.getGitAuthorEmail();
-    } catch {
-      // ignore
-    }
-  }
 
   const commits = await getGitLabCommits(gitlabUrl, token, projectPath, since, until, rejectUnauthorized, authorEmail);
 

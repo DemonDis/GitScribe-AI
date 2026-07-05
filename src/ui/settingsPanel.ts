@@ -22,6 +22,9 @@ const T: Record<Lang, Record<string, string>> = {
     githubToken: 'GitHub Token',
     tlsVerify: 'Disable TLS certificate verification (rejectUnauthorized)',
     gitmoji: 'Use gitmoji in commit messages',
+    reportAuthorOnly: 'Report: show only my commits',
+    reportAuthorFilter: 'Author email filter',
+    reportAuthorFilterPlaceholder: 'email@example.com',
     settingsSaved: 'Settings saved!',
     language: 'Language',
     mainSettings: 'Settings',
@@ -56,6 +59,9 @@ const T: Record<Lang, Record<string, string>> = {
     githubToken: 'GitHub токен',
     tlsVerify: 'Отключить проверку TLS сертификата (rejectUnauthorized)',
     gitmoji: 'Использовать gitmoji в коммитах',
+    reportAuthorOnly: 'Отчёт: только мои коммиты',
+    reportAuthorFilter: 'Фильтр по email автора',
+    reportAuthorFilterPlaceholder: 'email@example.com',
     settingsSaved: 'Настройки сохранены!',
     language: 'Язык',
     mainSettings: 'Настройки',
@@ -154,6 +160,8 @@ export class SettingsPanel {
         githubToken: config.get('githubToken', ''),
         rejectUnauthorized: config.get('rejectUnauthorized', false),
         gitmoji: config.get('gitmoji', false),
+        reportAuthorOnly: config.get('reportAuthorOnly', true),
+        reportAuthorFilter: config.get('reportAuthorFilter', ''),
         prompt: config.get('prompt', ''),
         language: config.get('language', 'en'),
       }
@@ -199,6 +207,8 @@ export class SettingsPanel {
     await config.update('githubToken', msg.githubToken, vscode.ConfigurationTarget.Global);
     await config.update('rejectUnauthorized', msg.rejectUnauthorized, vscode.ConfigurationTarget.Global);
     await config.update('gitmoji', msg.gitmoji, vscode.ConfigurationTarget.Global);
+    await config.update('reportAuthorOnly', msg.reportAuthorOnly, vscode.ConfigurationTarget.Global);
+    await config.update('reportAuthorFilter', msg.reportAuthorFilter, vscode.ConfigurationTarget.Global);
     await config.update('prompt', msg.prompt, vscode.ConfigurationTarget.Global);
     await config.update('language', msg.language, vscode.ConfigurationTarget.Global);
     this._lang = msg.language as Lang;
@@ -533,6 +543,14 @@ h2 {
 <input type="checkbox" id="gitmoji" />
 <label for="gitmoji">${this._tr('gitmoji')}</label>
 </div>
+<div class="form-group checkbox-group">
+<input type="checkbox" id="reportAuthorOnly" onchange="toggleAuthorFilter()" />
+<label for="reportAuthorOnly">${this._tr('reportAuthorOnly')}</label>
+</div>
+<div class="form-group" id="reportAuthorFilter-group" style="display:none">
+<label for="reportAuthorFilter">${this._tr('reportAuthorFilter')}</label>
+<input type="text" id="reportAuthorFilter" placeholder="${this._tr('reportAuthorFilterPlaceholder')}" />
+</div>
 </div>
 
 <button class="btn" onclick="save()">${this._tr('save')}</button>
@@ -551,6 +569,11 @@ const vscode = acquireVsCodeApi();
 
 function setLang() {
   vscode.postMessage({ command: 'setLang', lang: document.getElementById('language').value });
+}
+
+function toggleAuthorFilter() {
+  const checked = document.getElementById('reportAuthorOnly').checked;
+  document.getElementById('reportAuthorFilter-group').style.display = checked ? 'none' : '';
 }
 
 function setProvider(provider) {
@@ -622,6 +645,9 @@ window.addEventListener('message', (event) => {
     document.getElementById('githubToken').value = msg.values.githubToken || '';
     document.getElementById('rejectUnauthorized').checked = msg.values.rejectUnauthorized || false;
     document.getElementById('gitmoji').checked = msg.values.gitmoji || false;
+    document.getElementById('reportAuthorOnly').checked = msg.values.reportAuthorOnly !== false;
+    document.getElementById('reportAuthorFilter').value = msg.values.reportAuthorFilter || '';
+    toggleAuthorFilter();
     document.getElementById('language').value = msg.values.language || 'en';
     setProvider(msg.values.gitProvider || 'gitlab');
     if (msg.values.prompt) {
@@ -645,6 +671,8 @@ function save() {
     githubToken: document.getElementById('githubToken').value,
     rejectUnauthorized: document.getElementById('rejectUnauthorized').checked,
     gitmoji: document.getElementById('gitmoji').checked,
+    reportAuthorOnly: document.getElementById('reportAuthorOnly').checked,
+    reportAuthorFilter: document.getElementById('reportAuthorFilter').value,
     prompt: document.getElementById('prompt').value,
     language: document.getElementById('language').value,
   });

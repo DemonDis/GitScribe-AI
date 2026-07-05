@@ -5,9 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [1.1.0] - 2026-07-05
 
 ### Added
-- Prompts tab in settings panel — view and edit all prompt files (readme.md, update.md, update/readme.md)
+- Prompts tab in settings panel — view and edit all prompt files (readme.md, update.md, update/readme.md, report.md)
 - Save custom prompts to VS Code config (`gitscribe.customPrompts`)
 - Restore default prompts with confirmation dialog
+- Separate report prompts for GitLab (default) and GitHub sources
 - Eye icon 👁 to show/hide token/key fields
 - Copy icon 📋 to copy token/key to clipboard
 
@@ -26,6 +27,6 @@ All notable changes to this project will be documented in this file.
 - AI-powered commit message generation
 - README generation and update
 - Project report generation
-- GitLab and GitHub integration
+- GitLab integration
 - VS Code sidebar view with configuration tree
 - Bilingual UI (English, Russian)

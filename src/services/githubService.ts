@@ -96,18 +96,9 @@ export async function getChangesFromGitHub(
   gitService: GitService,
   since: string,
   until: string,
-  authorOnly: boolean = false
+  authorEmail?: string
 ): Promise<string> {
   const { owner, repo } = await getRepoPath(gitService);
-
-  let authorEmail: string | undefined;
-  if (authorOnly) {
-    try {
-      authorEmail = await gitService.getGitAuthorEmail();
-    } catch {
-      // ignore
-    }
-  }
 
   const commits = await getGitHubCommits(token, owner, repo, since, until, authorEmail);
 

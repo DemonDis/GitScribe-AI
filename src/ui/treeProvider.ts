@@ -1,13 +1,12 @@
 import * as vscode from 'vscode';
 import { t } from '../i18n';
 
-function createTreeItem(label: string, command: string, icon: string): vscode.TreeItem {
+function createTreeItem(label: string, command: string, icon: string, cmdArgs?: any[]): vscode.TreeItem {
   const item = new vscode.TreeItem(label, vscode.TreeItemCollapsibleState.None);
   item.iconPath = new vscode.ThemeIcon(icon);
-  item.command = {
-    command,
-    title: label,
-  };
+  if (command) {
+    item.command = { command, title: label, arguments: cmdArgs };
+  }
   return item;
 }
 
@@ -28,9 +27,16 @@ export class GitScribeTreeProvider implements vscode.TreeDataProvider<vscode.Tre
       const settingsItem = createTreeItem(t('settings'), 'gitScribe.openSettings', 'gear');
       const readmeItem = createTreeItem(t('generateReadme'), 'gitScribe.generateReadme', 'files');
       const readmeUpdateItem = createTreeItem(t('updateReadme'), 'gitScribe.updateReadme', 'sync');
-      const reportItem = createTreeItem(t('reports'), 'gitScribe.generateReport', 'report');
+      const reportItem = new vscode.TreeItem(t('reports'), vscode.TreeItemCollapsibleState.Collapsed);
+      reportItem.iconPath = new vscode.ThemeIcon('report');
 
       return [settingsItem, readmeItem, readmeUpdateItem, reportItem];
+    }
+
+    if (element.label === t('reports')) {
+      const gitlabItem = createTreeItem(`GitLab`, 'gitScribe.generateReport', 'server', ['gitlab']);
+      const githubItem = createTreeItem(`GitHub`, 'gitScribe.generateReport', 'server', ['github']);
+      return [gitlabItem, githubItem];
     }
 
     return [];

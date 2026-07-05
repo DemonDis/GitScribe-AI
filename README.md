@@ -69,7 +69,7 @@ No Node.js or other external dependencies required — the extension is fully se
 The webview-based settings panel includes two tabs:
 
 - **Settings** — AI provider, Git integration, commit prompt, options, language selector
-- **Prompts** — View and edit all prompt files (`readme.md`, `update.md`, `update/readme.md`) with save and restore defaults
+- **Prompts** — View and edit all prompt files (`readme.md`, `update.md`, `update/readme.md`, `report.md`) with save and restore defaults
 
 Token/key fields feature eye 👁 (show/hide) and copy 📋 buttons for convenience.
 

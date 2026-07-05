@@ -153,16 +153,7 @@ export class GitService {
     return result;
   }
 
-  async getChangesByDateRange(fromDate: string, toDate: string, authorOnly: boolean = false): Promise<string> {
-    let authorEmail: string | undefined;
-    if (authorOnly) {
-      try {
-        authorEmail = await this.getGitAuthorEmail();
-      } catch {
-        // ignore
-      }
-    }
-
+  async getChangesByDateRange(fromDate: string, toDate: string, authorEmail?: string): Promise<string> {
     const sinceDate = `${fromDate}T00:00:00`;
     const untilDate = `${toDate}T23:59:59`;
 
@@ -179,7 +170,7 @@ export class GitService {
       const parts = line.split('|');
       if (parts.length < 4) continue;
       const [hash, email, name, ...subjectParts] = parts;
-      if (authorOnly && authorEmail && email !== authorEmail) continue;
+      if (authorEmail && email !== authorEmail) continue;
       commits.push({ hash, email, name, subject: subjectParts.join('|') });
     }
 
