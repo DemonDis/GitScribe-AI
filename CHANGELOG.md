@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [1.1.0] - 2026-07-05
 
 ### Added
-- Prompts tab in settings panel — view and edit all prompt files (readme.md, update.md, api.md, update/readme.md)
+- Prompts tab in settings panel — view and edit all prompt files (readme.md, update.md, update/readme.md)
 - Save custom prompts to VS Code config (`gitscribe.customPrompts`)
 - Restore default prompts with confirmation dialog
 - Eye icon 👁 to show/hide token/key fields

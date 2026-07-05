@@ -79,7 +79,7 @@ const PROMPT_FILES = [
   'readme.md',
   'update.md',
   'update/readme.md',
-  'api.md',
+  'report.md',
 ];
 
 export class SettingsPanel {

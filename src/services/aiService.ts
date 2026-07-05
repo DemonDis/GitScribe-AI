@@ -82,39 +82,13 @@ ${repomixContent}
   async generateReport(
     config: AiConfig,
     changes: string,
-    mode: string
+    promptTemplate: string
   ): Promise<string> {
-    const modeLabel =
-      mode === 'uncommitted'
-        ? 'незакоммиченные изменения'
-        : mode === 'gitlab'
-          ? 'изменения из GitLab за период'
-          : mode === 'date'
-            ? 'изменения за период'
-            : 'изменения между коммитами';
-
-    const prompt = `Ты — технический писатель. Напиши краткий отчет для руководителя о проделанной работе на русском языке.
-
-Формат отчета:
-## Отчет о проделанной работе
-
-### Что сделано
-- краткий маркированный список основных изменений (2-5 пунктов)
-
-### Детали
-- ключевые технические изменения (если применимо)
-
-### Вывод
-- 1 предложение итога
-
-Данные изменений:
-${changes}
-
-Сгенерируй отчет строго по указанному формату. Без лишних комментариев.`;
+    const prompt = promptTemplate.replace('{changes}', changes);
 
     return this.generateText(
       config,
-      'Ты — технический писатель, составляешь краткие отчеты для руководителя.',
+      '',
       prompt,
       { temperature: 0.3, maxTokens: 2000 }
     );

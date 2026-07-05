@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 import { ConfigService } from '../../config/configService';
 import { AiService } from '../../services/aiService';
 import { GitService } from '../../services/gitService';
@@ -87,6 +89,15 @@ function showReportPanel(report: string) {
 </html>`;
 
   panel.webview.html = html;
+}
+
+function getReportPrompt(context: vscode.ExtensionContext): string {
+  const customPrompts = vscode.workspace.getConfiguration('gitscribe').get<Record<string, string>>('customPrompts', {});
+  if (customPrompts['report.md']) {
+    return customPrompts['report.md'];
+  }
+  const promptsPath = path.join(context.extensionPath, 'assets', 'prompts', 'report.md');
+  return fs.readFileSync(promptsPath, 'utf-8');
 }
 
 export function registerReportCommands(context: vscode.ExtensionContext): vscode.Disposable[] {
@@ -230,7 +241,8 @@ export function registerReportCommands(context: vscode.ExtensionContext): vscode
       },
       async () => {
         try {
-          const report = await aiService.generateReport(config, changes, picked.value);
+          const reportPrompt = getReportPrompt(context);
+          const report = await aiService.generateReport(config, changes, reportPrompt);
           const authorName = await gitService.getGitAuthorName();
           const now = new Date();
           const dateStr = now.toLocaleDateString('ru-RU');
