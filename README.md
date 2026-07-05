@@ -4,56 +4,74 @@
 AI-powered Git assistant for VS Code: commit messages, README generation, and project reports.
 </p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/VS%20Code-1.85+-007ACC?logo=visualstudiocode" alt="VS Code">
+  <img src="https://img.shields.io/badge/version-1.1.0-blue" alt="Version">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
+</p>
+
 ---
 
 ## Features
 
 ### Generate Commit Messages
-
 Analyze your staged changes and generate semantic commit messages with optional gitmoji support.
 
 ### Generate & Update README
-
 Create a comprehensive README from your project structure, or update an existing one with new changes.
 
 ### Generate Reports
+Produce detailed project reports summarizing recent changes — supports uncommitted changes, date range, commit range, and GitLab/GitHub API integration.
 
-Produce detailed project reports summarizing your codebase, recent changes, and project health.
+### Customizable Prompts
+Edit all AI prompts directly in the settings panel — commit prompts, README generation prompts, report prompts. Save custom versions or restore defaults anytime.
 
-### GitLab Integration
+### Bilingual UI
+Switch between English and Russian in the settings panel. All interface elements, notifications, and tree view labels adapt instantly.
 
-Push generated README and reports directly to your GitLab repository.
+### GitLab & GitHub Integration
+Fetch commits from GitLab or GitHub API for report generation.
 
 ---
 
 ## Installation
 
-Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=git-scribe-ai.git-scribe-ai) or search for "GitScribe AI" in the Extensions view.
+Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Ilnsk.git-scribe-ai) or search for "GitScribe AI" in the Extensions view.
 
 ## Configuration
 
-1. Open the command palette (`Cmd+Shift+P`) and run **GitScribe AI: Setup Configuration**
-2. Configure your AI provider (OpenAI, Anthropic, etc.) and API key
-3. (Optional) Configure GitLab integration for publishing
+1. Open the sidebar and click the **GitScribe AI** icon
+2. Click **Settings** to open the configuration panel
+3. Configure your AI provider (API URL, API key, model)
+4. (Optional) Configure GitLab/GitHub integration for API reports
 
 Or set directly in VS Code settings under `gitscribe.*`.
 
 ## Requirements
 
 - VS Code 1.85+
-- Node.js 20+
-- An API key for your chosen AI provider
+- An API key for your chosen AI provider (e.g., OpenAI, DeepSeek, Anthropic)
+
+No Node.js or other external dependencies required — the extension is fully self-contained.
 
 ## Commands
 
 | Command | Description |
 |---------|------------|
-| `GitScribe AI: Setup Configuration` | Open configuration view |
+| `GitScribe AI: Open Settings` | Open configuration panel |
 | `GitScribe AI: Generate Commit Message` | Generate a commit message from staged changes |
 | `GitScribe AI: Generate README` | Create a new README for your project |
 | `GitScribe AI: Update README` | Update existing README with recent changes |
 | `GitScribe AI: Generate Report` | Generate a project report |
-| `GitScribe AI: Edit Prompt` | Customize the AI prompt |
+
+## Settings Panel
+
+The webview-based settings panel includes two tabs:
+
+- **Settings** — AI provider, Git integration, commit prompt, options, language selector
+- **Prompts** — View and edit all prompt files (`readme.md`, `update.md`, `api.md`, `update/readme.md`) with save and restore defaults
+
+Token/key fields feature eye 👁 (show/hide) and copy 📋 buttons for convenience.
 
 ## Development
 
@@ -72,4 +90,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-[Apache 2.0](LICENSE)
+[MIT](LICENSE)
