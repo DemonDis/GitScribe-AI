@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-07-05
+
+### Added
+- Calendar date picker for all date inputs in report (native `<input type="date">` via webview)
+- Date range picker with both From/To fields in one panel
+- "Commits for a specific date" mode in report
+- Reports tree item is now collapsible with GitLab/GitHub sub-items
+- Author filter setting (`reportAuthorOnly` / `reportAuthorFilter`) — show only my commits, filter by specific email, or show all
+- Report panel is reused (no duplicate panels)
+
+### Changed
+- Report no longer filters by author by default (all commits shown). Toggle in settings to filter.
+- Git service functions now accept `authorEmail?: string` instead of `authorOnly: boolean`
+- Report panel reuses existing webview instead of creating new one each time
+
+### Fixed
+- Race condition in `pickDate` Promise — `panel.dispose()` was resolving before confirm message
+- `workspaceFolders![0]` crash when no workspace open
+- Second source picker not showing correctly for local git modes
+
 ## [1.1.0] - 2026-07-05
 
 ### Added

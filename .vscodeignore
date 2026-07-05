@@ -20,3 +20,4 @@ docs/
 *.log
 *.vsix
 git-scribe-ai-*
+.opencode
