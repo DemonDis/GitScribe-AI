@@ -267,6 +267,18 @@ select {
   color: var(--vscode-input-foreground);
   font-size: 13px;
 }
+.input-wrap { position: relative; display: flex; align-items: center; }
+.input-wrap input { flex: 1; padding-right: 70px; }
+.input-wrap .input-actions {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  display: flex; gap: 2px;
+}
+.input-wrap .input-actions button {
+  padding: 2px 6px; font-size: 14px; line-height: 1;
+  border: none; background: transparent; color: var(--vscode-input-foreground);
+  cursor: pointer; border-radius: 2px; opacity: 0.5; transition: opacity 0.15s;
+}
+.input-wrap .input-actions button:hover { opacity: 1; background: var(--vscode-list-hoverBackground); }
 textarea {
   min-height: 80px;
   max-height: 400px;
@@ -450,7 +462,13 @@ h2 {
 </div>
 <div class="form-group">
 <label for="apiKey">${this._tr('apiKey')}</label>
+<div class="input-wrap">
 <input type="password" id="apiKey" placeholder="${this._tr('apiKeyPlaceholder')}" />
+<div class="input-actions">
+<button onclick="togglePassword('apiKey')" title="Show/Hide">👁</button>
+<button onclick="copyToClipboard('apiKey')" title="Copy">📋</button>
+</div>
+</div>
 </div>
 <div class="form-group">
 <label for="model">${this._tr('model')}</label>
@@ -474,13 +492,25 @@ h2 {
 </div>
 <div class="form-group">
 <label for="gitlabToken">${this._tr('gitlabToken')}</label>
+<div class="input-wrap">
 <input type="password" id="gitlabToken" placeholder="${this._tr('gitlabTokenPlaceholder')}" />
+<div class="input-actions">
+<button onclick="togglePassword('gitlabToken')" title="Show/Hide">👁</button>
+<button onclick="copyToClipboard('gitlabToken')" title="Copy">📋</button>
+</div>
+</div>
 </div>
 </div>
 <div class="git-fields" id="github-fields">
 <div class="form-group">
 <label for="githubToken">${this._tr('githubToken')}</label>
+<div class="input-wrap">
 <input type="password" id="githubToken" placeholder="${this._tr('githubTokenPlaceholder')}" />
+<div class="input-actions">
+<button onclick="togglePassword('githubToken')" title="Show/Hide">👁</button>
+<button onclick="copyToClipboard('githubToken')" title="Copy">📋</button>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -528,6 +558,21 @@ function setProvider(provider) {
   document.getElementById('btn-github').classList.toggle('active', provider === 'github');
   document.getElementById('gitlab-fields').classList.toggle('visible', provider === 'gitlab');
   document.getElementById('github-fields').classList.toggle('visible', provider === 'github');
+}
+
+function togglePassword(id) {
+  const el = document.getElementById(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+function copyToClipboard(id) {
+  const el = document.getElementById(id);
+  const val = el.value;
+  if (!val) return;
+  navigator.clipboard.writeText(val).then(() => {
+    const btn = el.parentElement.querySelector('button[onclick*="copyToClipboard"]');
+    if (btn) { btn.textContent = '✓'; setTimeout(() => { btn.textContent = '📋'; }, 1500); }
+  });
 }
 
 function switchTab(name) {
