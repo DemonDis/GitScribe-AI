@@ -18,7 +18,7 @@ export function activate(context: vscode.ExtensionContext) {
     const reportDisposables = registerReportCommands(context);
 
     const settingsCommand = vscode.commands.registerCommand('gitScribe.openSettings', () => {
-      SettingsPanel.createOrShow();
+      SettingsPanel.createOrShow(context);
     });
 
     const configListener = vscode.workspace.onDidChangeConfiguration((e) => {

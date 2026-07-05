@@ -14,6 +14,10 @@ const aiService = new AiService();
 const tokenService = new TokenService();
 
 function getPromptContent(context: vscode.ExtensionContext, promptFile: string): string {
+  const customPrompts = vscode.workspace.getConfiguration('gitscribe').get<Record<string, string>>('customPrompts', {});
+  if (customPrompts[promptFile]) {
+    return customPrompts[promptFile];
+  }
   const promptsPath = path.join(context.extensionPath, 'assets', 'prompts', promptFile);
   return fs.readFileSync(promptsPath, 'utf-8');
 }

@@ -4,7 +4,7 @@
   "description": "AI-powered Git assistant: commit messages, README generation, reports",
   "version": "1.0.0",
   "icon": "img/icon.png",
-  "publisher": "git-scribe-ai",
+  "publisher": "Ilnsk",
   "repository": {
     "type": "git",
     "url": "https://github.com/DemonDis/GitScribe-AI.git"
@@ -145,6 +145,11 @@
           "type": "string",
           "default": "",
           "description": "Custom prompt template for commit message generation. Use {diff} as placeholder for the diff content."
+        },
+        "gitscribe.customPrompts": {
+          "type": "object",
+          "default": {},
+          "description": "Custom overrides for prompt files. Keys are file paths (e.g. 'readme.md'), values are prompt content."
         },
         "gitscribe.language": {
           "type": "string",

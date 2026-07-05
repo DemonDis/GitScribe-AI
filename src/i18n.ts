@@ -56,6 +56,13 @@ export const T: Record<Lang, Record<string, string>> = {
     usingDiffOnly: 'Using diff-only mode...',
     readmeUpdated: 'README.md updated successfully!',
     aiError: 'AI error: {msg}',
+    prompts: 'Prompts',
+    mainSettings: 'Settings',
+    savePrompts: 'Save Prompts',
+    restoreDefaults: 'Restore Defaults',
+    promptsSaved: 'Prompts saved!',
+    promptsRestored: 'Default prompts restored!',
+    confirmRestore: 'Restore default prompts? Custom changes will be lost.',
   },
   ru: {
     settings: 'Настройки',
@@ -110,6 +117,13 @@ export const T: Record<Lang, Record<string, string>> = {
     usingDiffOnly: 'Режим только diff...',
     readmeUpdated: 'README.md успешно обновлён!',
     aiError: 'Ошибка AI: {msg}',
+    prompts: 'Промпты',
+    mainSettings: 'Настройки',
+    savePrompts: 'Сохранить промпты',
+    restoreDefaults: 'Сбросить настройки',
+    promptsSaved: 'Промпты сохранены!',
+    promptsRestored: 'Промпты сброшены до стандартных!',
+    confirmRestore: 'Сбросить промпты до стандартных? Все изменения будут потеряны.',
   },
 };
 

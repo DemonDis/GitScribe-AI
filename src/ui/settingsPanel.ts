@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 
 type Lang = 'en' | 'ru';
 
@@ -22,6 +24,13 @@ const T: Record<Lang, Record<string, string>> = {
     gitmoji: 'Use gitmoji in commit messages',
     settingsSaved: 'Settings saved!',
     language: 'Language',
+    mainSettings: 'Settings',
+    prompts: 'Prompts',
+    savePrompts: 'Save Prompts',
+    restoreDefaults: 'Restore Defaults',
+    promptsSaved: 'Prompts saved!',
+    promptsRestored: 'Default prompts restored!',
+    confirmRestore: 'Restore default prompts? Custom changes will be lost.',
     promptPlaceholder: 'Generate a concise git commit message (max 72 characters for title). Analyze this diff and create a semantic commit message:\n\n{diff}\n\nReturn ONLY the commit message, no explanation.',
     apiUrlPlaceholder: 'https://api.openai.com/v1',
     apiKeyPlaceholder: 'sk-...',
@@ -49,6 +58,13 @@ const T: Record<Lang, Record<string, string>> = {
     gitmoji: 'Использовать gitmoji в коммитах',
     settingsSaved: 'Настройки сохранены!',
     language: 'Язык',
+    mainSettings: 'Настройки',
+    prompts: 'Промпты',
+    savePrompts: 'Сохранить промпты',
+    restoreDefaults: 'Сбросить настройки',
+    promptsSaved: 'Промпты сохранены!',
+    promptsRestored: 'Промпты сброшены до стандартных!',
+    confirmRestore: 'Сбросить промпты до стандартных? Все изменения будут потеряны.',
     promptPlaceholder: 'Generate a concise git commit message (max 72 characters for title). Analyze this diff and create a semantic commit message:\n\n{diff}\n\nReturn ONLY the commit message, no explanation.',
     apiUrlPlaceholder: 'https://api.openai.com/v1',
     apiKeyPlaceholder: 'sk-...',
@@ -59,17 +75,26 @@ const T: Record<Lang, Record<string, string>> = {
   },
 };
 
+const PROMPT_FILES = [
+  'readme.md',
+  'update.md',
+  'update/readme.md',
+  'api.md',
+];
+
 export class SettingsPanel {
   public static currentPanel: SettingsPanel | undefined;
   private readonly _panel: vscode.WebviewPanel;
   private _disposables: vscode.Disposable[] = [];
   private _lang: Lang = 'en';
+  private readonly _extensionPath: string;
 
-  private constructor(panel: vscode.WebviewPanel) {
+  private constructor(panel: vscode.WebviewPanel, extensionPath: string) {
+    this._extensionPath = extensionPath;
     this._panel = panel;
     const cfg = vscode.workspace.getConfiguration('gitscribe');
     this._lang = (cfg.get<string>('language') as Lang) || 'en';
-    this._panel.webview.html = this._getHtml(this._lang);
+    this._panel.webview.html = this._getHtml();
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
     this._panel.webview.onDidReceiveMessage(async (msg) => {
       switch (msg.command) {
@@ -82,13 +107,19 @@ export class SettingsPanel {
         case 'setLang':
           this._lang = msg.lang as Lang;
           await vscode.workspace.getConfiguration('gitscribe').update('language', this._lang, vscode.ConfigurationTarget.Global);
-          this._panel.webview.html = this._getHtml(this._lang);
+          this._panel.webview.html = this._getHtml();
+          break;
+        case 'savePrompts':
+          await this._savePrompts(msg);
+          break;
+        case 'restorePrompts':
+          await this._restorePrompts();
           break;
       }
     }, null, this._disposables);
   }
 
-  public static createOrShow() {
+  public static createOrShow(context: vscode.ExtensionContext) {
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
@@ -106,7 +137,7 @@ export class SettingsPanel {
       { enableScripts: true }
     );
 
-    SettingsPanel.currentPanel = new SettingsPanel(panel);
+    SettingsPanel.currentPanel = new SettingsPanel(panel, context.extensionPath);
   }
 
   private _loadSettings() {
@@ -127,6 +158,34 @@ export class SettingsPanel {
         language: config.get('language', 'en'),
       }
     });
+    this._sendPrompts();
+  }
+
+  private _getDefaultPrompts(): Record<string, string> {
+    const prompts: Record<string, string> = {};
+    for (const file of PROMPT_FILES) {
+      const filePath = path.join(this._extensionPath, 'assets', 'prompts', file);
+      try {
+        prompts[file] = fs.readFileSync(filePath, 'utf-8');
+      } catch {
+        prompts[file] = '';
+      }
+    }
+    return prompts;
+  }
+
+  private _sendPrompts() {
+    const customPrompts = vscode.workspace.getConfiguration('gitscribe').get<Record<string, string>>('customPrompts', {});
+    const defaults = this._getDefaultPrompts();
+    const current: Record<string, string> = {};
+    for (const file of PROMPT_FILES) {
+      current[file] = customPrompts[file] || defaults[file] || '';
+    }
+    this._panel.webview.postMessage({
+      command: 'setPrompts',
+      current,
+      defaults,
+    });
   }
 
   private async _saveSettings(msg: any) {
@@ -146,14 +205,37 @@ export class SettingsPanel {
     vscode.window.showInformationMessage(T[this._lang].settingsSaved);
   }
 
+  private async _savePrompts(msg: any) {
+    const customPrompts: Record<string, string> = {};
+    for (const file of PROMPT_FILES) {
+      if (msg.prompts && msg.prompts[file] !== undefined) {
+        customPrompts[file] = msg.prompts[file];
+      }
+    }
+    await vscode.workspace.getConfiguration('gitscribe').update('customPrompts', customPrompts, vscode.ConfigurationTarget.Global);
+    vscode.window.showInformationMessage(T[this._lang].promptsSaved);
+  }
+
+  private async _restorePrompts() {
+    const action = await vscode.window.showWarningMessage(
+      T[this._lang].confirmRestore,
+      { modal: true },
+      T[this._lang].restoreDefaults,
+    );
+    if (action !== T[this._lang].restoreDefaults) return;
+
+    await vscode.workspace.getConfiguration('gitscribe').update('customPrompts', {}, vscode.ConfigurationTarget.Global);
+    this._sendPrompts();
+    vscode.window.showInformationMessage(T[this._lang].promptsRestored);
+  }
+
   private _tr(key: string): string {
     return T[this._lang][key] || key;
   }
 
-  private _getHtml(lang: Lang): string {
-    this._lang = lang;
+  private _getHtml(): string {
     return `<!DOCTYPE html>
-<html lang="${lang}">
+<html lang="${this._lang}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -224,12 +306,8 @@ select:focus {
 .toggle-btn:hover {
   border-color: var(--vscode-focusBorder);
 }
-.git-fields {
-  display: none;
-}
-.git-fields.visible {
-  display: block;
-}
+.git-fields { display: none; }
+.git-fields.visible { display: block; }
 .checkbox-group {
   display: flex;
   align-items: center;
@@ -246,8 +324,13 @@ select:focus {
   color: var(--vscode-button-foreground);
   font-size: 13px;
   cursor: pointer;
+  margin-top: 8px;
 }
 .btn:hover { background: var(--vscode-button-hoverBackground); }
+.btn-danger {
+  background: var(--vscode-errorForeground, #e74c3c);
+}
+.btn-danger:hover { opacity: 0.85; }
 h2 {
   margin: 0;
   font-size: 16px;
@@ -299,6 +382,45 @@ h2 {
   color: var(--vscode-panelTitle-activeForeground);
   margin-bottom: 12px;
 }
+.tab-bar {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+.tab-btn {
+  padding: 8px 20px;
+  border: none;
+  background: transparent;
+  color: var(--vscode-foreground);
+  font-size: 13px;
+  cursor: pointer;
+  opacity: 0.6;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.tab-btn.active {
+  opacity: 1;
+  border-bottom-color: var(--vscode-focusBorder);
+}
+.tab-btn:hover { opacity: 0.8; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.prompt-group {
+  margin-bottom: 20px;
+  padding: 12px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+}
+.prompt-group label { font-size: 12px; color: var(--vscode-textPreformat-foreground); }
+.prompt-group textarea { min-height: 120px; margin-top: 4px; }
+.prompt-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.prompt-actions .btn { margin: 0; }
+.prompt-actions .btn-sm { width: auto; }
 </style>
 </head>
 <body>
@@ -308,13 +430,18 @@ h2 {
 </div>
 <div class="header-right">
 <select class="lang-select" id="language" onchange="setLang()">
-<option value="en" ${lang === 'en' ? 'selected' : ''}>English</option>
-<option value="ru" ${lang === 'ru' ? 'selected' : ''}>Русский</option>
+<option value="en" ${this._lang === 'en' ? 'selected' : ''}>English</option>
+<option value="ru" ${this._lang === 'ru' ? 'selected' : ''}>Русский</option>
 </select>
-<button class="btn-sm" onclick="save()">${this._tr('save')}</button>
 </div>
 </div>
 
+<div class="tab-bar">
+<button class="tab-btn active" id="tab-settings-btn" onclick="switchTab('settings')">${this._tr('mainSettings')}</button>
+<button class="tab-btn" id="tab-prompts-btn" onclick="switchTab('prompts')">${this._tr('prompts')}</button>
+</div>
+
+<div class="tab-content active" id="tab-settings">
 <div class="section">
 <div class="section-title">${this._tr('aiProvider')}</div>
 <div class="form-group">
@@ -379,6 +506,15 @@ h2 {
 </div>
 
 <button class="btn" onclick="save()">${this._tr('save')}</button>
+</div>
+
+<div class="tab-content" id="tab-prompts">
+<div id="prompts-container"></div>
+<div class="prompt-actions">
+<button class="btn" onclick="savePrompts()">${this._tr('savePrompts')}</button>
+<button class="btn btn-danger" onclick="restorePrompts()">${this._tr('restoreDefaults')}</button>
+</div>
+</div>
 
 <script>
 const vscode = acquireVsCodeApi();
@@ -392,6 +528,42 @@ function setProvider(provider) {
   document.getElementById('btn-github').classList.toggle('active', provider === 'github');
   document.getElementById('gitlab-fields').classList.toggle('visible', provider === 'gitlab');
   document.getElementById('github-fields').classList.toggle('visible', provider === 'github');
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name + '-btn').classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+function renderPrompts(current, defaults) {
+  const container = document.getElementById('prompts-container');
+  container.innerHTML = '';
+  for (const [file, content] of Object.entries(current)) {
+    const div = document.createElement('div');
+    div.className = 'prompt-group';
+    div.innerHTML = '<label>' + escapeHtml(file) + '</label>' +
+      '<textarea id="prompt-' + escapeHtml(file) + '" data-file="' + escapeHtml(file) + '">' +
+      escapeHtml(content) + '</textarea>';
+    container.appendChild(div);
+  }
+}
+
+function savePrompts() {
+  const prompts = {};
+  document.querySelectorAll('#prompts-container textarea').forEach(ta => {
+    prompts[ta.dataset.file] = ta.value;
+  });
+  vscode.postMessage({ command: 'savePrompts', prompts });
+}
+
+function restorePrompts() {
+  vscode.postMessage({ command: 'restorePrompts' });
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 window.addEventListener('message', (event) => {
@@ -411,7 +583,11 @@ window.addEventListener('message', (event) => {
       document.getElementById('prompt').value = msg.values.prompt;
     }
   }
+  if (msg.command === 'setPrompts') {
+    renderPrompts(msg.current, msg.defaults);
+  }
 });
+
 function save() {
   vscode.postMessage({
     command: 'save',
