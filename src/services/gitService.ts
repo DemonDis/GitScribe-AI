@@ -123,7 +123,8 @@ export class GitService {
 
   async getGitAuthorEmail(): Promise<string> {
     try {
-      return await this.git.raw(['config', 'user.email']);
+      const email = await this.git.raw(['config', 'user.email']);
+      return email.trim();
     } catch {
       return '';
     }
@@ -166,19 +167,25 @@ export class GitService {
     const lines = log.split('\n').filter(l => l.trim());
     const commits: { hash: string; email: string; name: string; subject: string }[] = [];
 
+    console.log('[GitService] getChangesByDateRange:', { fromDate, toDate, authorEmail, totalLines: lines.length });
+
     for (const line of lines) {
       const parts = line.split('|');
       if (parts.length < 4) continue;
       const [hash, email, name, ...subjectParts] = parts;
+      console.log('[GitService] Commit:', { hash: hash.substring(0, 8), email, name, filtered: authorEmail ? email !== authorEmail : false });
       if (authorEmail && email !== authorEmail) continue;
       commits.push({ hash, email, name, subject: subjectParts.join('|') });
     }
+
+    console.log('[GitService] Commits after filter:', commits.length);
 
     if (commits.length === 0) return 'Нет коммитов за указанный период';
 
     let result = `=== Коммиты с ${fromDate} по ${toDate} ===\n`;
     for (const c of commits) {
-      result += `${c.hash.substring(0, 8)} ${c.subject} (${c.name} <${c.email}>)\n`;
+      const marker = (authorEmail && c.email === authorEmail) ? '[ВЫ] ' : '';
+      result += `${marker}${c.hash.substring(0, 8)} ${c.subject} (${c.name})\n`;
     }
     result += '\n';
 

@@ -52,11 +52,15 @@ export async function getGitLabCommits(
   const baseUrl = gitlabUrl.replace(/\/+$/, '');
   let urlStr = `${baseUrl}/api/v4/projects/${projectPathEncoded}/repository/commits?since=${since}T00:00:00Z&until=${until}T23:59:59Z&per_page=100`;
 
+  // GitLab API: author параметр фильтрует по author id или username, не по email
+  // Для фильтрации по email нужно использовать author_email параметр
   if (authorEmail) {
-    urlStr += `&author=${encodeURIComponent(authorEmail)}`;
+    urlStr += `&author_email=${encodeURIComponent(authorEmail)}`;
   }
 
   const url = new URL(urlStr);
+  console.log('[GitLab] Request URL:', url.toString());
+  console.log('[GitLab] Author email filter:', authorEmail || 'none');
 
   return new Promise((resolve, reject) => {
     const options: https.RequestOptions = {
@@ -74,18 +78,23 @@ export async function getGitLabCommits(
       let data = '';
       res.on('data', (chunk) => (data += chunk));
       res.on('end', () => {
+        console.log('[GitLab] Response status:', res.statusCode);
         if (res.statusCode && res.statusCode >= 400) {
           reject(new Error(`GitLab API error ${res.statusCode}: ${data}`));
           return;
         }
         try {
           const commits: GitLabCommit[] = JSON.parse(data);
+          console.log('[GitLab] Commits count:', commits.length);
           resolve(commits);
         } catch {
           reject(new Error('Ошибка парсинга ответа GitLab: ' + data));
         }
       });
-    }).on('error', (e) => reject(new Error(`Ошибка запроса к GitLab: ${e.message}`))).end();
+    }).on('error', (e) => {
+      console.error('[GitLab] Request error:', e);
+      reject(new Error(`Ошибка запроса к GitLab: ${e.message}`));
+    }).end();
   });
 }
 

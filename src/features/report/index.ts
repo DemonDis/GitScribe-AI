@@ -224,10 +224,12 @@ export function registerReportCommands(context: vscode.ExtensionContext): vscode
         changes = await gitService.getChangesByCommits(fromCommit, toCommit);
       }
     } catch (e: any) {
+      console.error('[Report] Error getting changes:', e);
       vscode.window.showErrorMessage(t('errorOccurred').replace('{msg}', e.message));
       return;
     }
 
+    // Проверяем, есть ли коммиты (не запускаем AI, если коммитов нет)
     if (changes.includes('Нет коммитов') || changes.includes('Нет незакоммиченных изменений')) {
       showReportPanel(changes);
       return;
@@ -255,14 +257,23 @@ export function registerReportCommands(context: vscode.ExtensionContext): vscode
       async () => {
         try {
           const reportPrompt = getReportPrompt(context, reportSource);
+          console.log('[Report] Generating report with source:', reportSource);
           const report = await aiService.generateReport(config, changes, reportPrompt);
           const authorName = await gitService.getGitAuthorName();
           const now = new Date();
           const dateStr = now.toLocaleDateString('ru-RU');
           const timeStr = now.toLocaleTimeString('ru-RU');
           const reportWithFooter = `${report}\n\n---\n*Report generated: ${dateStr} ${timeStr}, author: ${authorName}*`;
+          console.log('[Report] Report generated successfully');
           showReportPanel(reportWithFooter);
         } catch (e: any) {
+          console.error('[Report] AI error:', e);
+          console.error('[Report] AI error details:', {
+            message: e.message,
+            code: e.code,
+            cause: e.cause,
+            stack: e.stack
+          });
           vscode.window.showErrorMessage(`AI error: ${e.message}`);
         }
       }

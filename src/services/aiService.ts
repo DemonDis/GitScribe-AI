@@ -1,4 +1,11 @@
 import { AiConfig } from '../config/types';
+import * as https from 'https';
+import * as http from 'http';
+import { URL } from 'url';
+
+export interface AiResponse {
+  choices: { message?: { content?: string }; text?: string }[];
+}
 
 export class AiService {
   async generateText(
@@ -8,9 +15,10 @@ export class AiService {
     options?: { temperature?: number; maxTokens?: number }
   ): Promise<string> {
     const baseUrl = config.apiUrl.endsWith('/') ? config.apiUrl.slice(0, -1) : config.apiUrl;
-    const url = baseUrl.includes('/v1')
+    const url = new URL(baseUrl.includes('/v1')
       ? `${baseUrl}/chat/completions`
-      : `${baseUrl}/v1/chat/completions`;
+      : `${baseUrl}/v1/chat/completions`
+    );
 
     const messages: { role: string; content: string }[] = [];
     if (systemPrompt) {
@@ -18,26 +26,55 @@ export class AiService {
     }
     messages.push({ role: 'user', content: userPrompt });
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.apiKey}`
-      },
-      body: JSON.stringify({
-        model: config.model,
-        messages,
-        temperature: options?.temperature ?? 0.7,
-        max_tokens: options?.maxTokens ?? 2000,
-      })
+    const body = JSON.stringify({
+      model: config.model,
+      messages,
+      temperature: options?.temperature ?? 0.7,
+      max_tokens: options?.maxTokens ?? 2000,
     });
 
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
-    }
+    return new Promise((resolve, reject) => {
+      const lib = url.protocol === 'https:' ? https : http;
+      const options: https.RequestOptions = {
+        hostname: url.hostname,
+        port: url.port || (url.protocol === 'https:' ? 443 : 80),
+        path: url.pathname + url.search,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${config.apiKey}`,
+        },
+        rejectUnauthorized: config.rejectUnauthorized ?? false,
+      };
 
-    const data = await response.json() as { choices: { message: { content: string } }[] };
-    return data.choices[0]?.message?.content?.trim() || '';
+      const req = lib.request(options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => (data += chunk));
+        res.on('end', () => {
+          try {
+            if (res.statusCode && res.statusCode >= 400) {
+              reject(new Error(`API error ${res.statusCode}: ${data}`));
+              return;
+            }
+            const parsed: AiResponse = JSON.parse(data);
+            const content =
+              parsed.choices?.[0]?.message?.content ||
+              parsed.choices?.[0]?.text ||
+              '';
+            resolve(content || 'Пустой ответ от модели');
+          } catch (e) {
+            reject(new Error(`Ошибка парсинга ответа: ${data}`));
+          }
+        });
+      });
+
+      req.on('error', (e) => {
+        console.error('[AiService] Request error:', e);
+        reject(new Error(`Ошибка запроса: ${e.message}`));
+      });
+      req.write(body);
+      req.end();
+    });
   }
 
   async generateCommitMessage(config: AiConfig, diff: string): Promise<string> {

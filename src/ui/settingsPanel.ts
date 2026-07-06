@@ -25,7 +25,7 @@ const T: Record<Lang, Record<string, string>> = {
     reportAuthorOnly: 'Report: show only my commits',
     reportAuthorFilter: 'Author email filter',
     reportAuthorFilterPlaceholder: 'email@example.com',
-    settingsSaved: 'Settings saved!',
+    settingsSaved: 'Settings saved',
     language: 'Language',
     mainSettings: 'Settings',
     prompts: 'Prompts',
@@ -62,7 +62,7 @@ const T: Record<Lang, Record<string, string>> = {
     reportAuthorOnly: 'Отчёт: только мои коммиты',
     reportAuthorFilter: 'Фильтр по email автора',
     reportAuthorFilterPlaceholder: 'email@example.com',
-    settingsSaved: 'Настройки сохранены!',
+    settingsSaved: 'Настройки сохранены',
     language: 'Язык',
     mainSettings: 'Настройки',
     prompts: 'Промпты',
@@ -120,6 +120,9 @@ export class SettingsPanel {
           break;
         case 'restorePrompts':
           await this._restorePrompts();
+          break;
+        case 'autoSave':
+          await this._autoSaveSettings(msg);
           break;
       }
     }, null, this._disposables);
@@ -213,6 +216,30 @@ export class SettingsPanel {
     await config.update('language', msg.language, vscode.ConfigurationTarget.Global);
     this._lang = msg.language as Lang;
     vscode.window.showInformationMessage(T[this._lang].settingsSaved);
+  }
+
+  private async _autoSaveSettings(msg: any) {
+    const config = vscode.workspace.getConfiguration('gitscribe');
+    const updates: Thenable<void>[] = [];
+    
+    if (msg.apiUrl !== undefined) updates.push(config.update('apiUrl', msg.apiUrl, vscode.ConfigurationTarget.Global));
+    if (msg.apiKey !== undefined) updates.push(config.update('apiKey', msg.apiKey, vscode.ConfigurationTarget.Global));
+    if (msg.model !== undefined) updates.push(config.update('model', msg.model, vscode.ConfigurationTarget.Global));
+    if (msg.gitProvider !== undefined) updates.push(config.update('gitProvider', msg.gitProvider, vscode.ConfigurationTarget.Global));
+    if (msg.gitlabUrl !== undefined) updates.push(config.update('gitlabUrl', msg.gitlabUrl, vscode.ConfigurationTarget.Global));
+    if (msg.gitlabToken !== undefined) updates.push(config.update('gitlabToken', msg.gitlabToken, vscode.ConfigurationTarget.Global));
+    if (msg.githubToken !== undefined) updates.push(config.update('githubToken', msg.githubToken, vscode.ConfigurationTarget.Global));
+    if (msg.rejectUnauthorized !== undefined) updates.push(config.update('rejectUnauthorized', msg.rejectUnauthorized, vscode.ConfigurationTarget.Global));
+    if (msg.gitmoji !== undefined) updates.push(config.update('gitmoji', msg.gitmoji, vscode.ConfigurationTarget.Global));
+    if (msg.reportAuthorOnly !== undefined) updates.push(config.update('reportAuthorOnly', msg.reportAuthorOnly, vscode.ConfigurationTarget.Global));
+    if (msg.reportAuthorFilter !== undefined) updates.push(config.update('reportAuthorFilter', msg.reportAuthorFilter, vscode.ConfigurationTarget.Global));
+    if (msg.prompt !== undefined) updates.push(config.update('prompt', msg.prompt, vscode.ConfigurationTarget.Global));
+    if (msg.language !== undefined) {
+      this._lang = msg.language as Lang;
+      updates.push(config.update('language', msg.language, vscode.ConfigurationTarget.Global));
+    }
+    
+    await Promise.all(updates);
   }
 
   private async _savePrompts(msg: any) {
@@ -553,7 +580,6 @@ h2 {
 </div>
 </div>
 
-<button class="btn" onclick="save()">${this._tr('save')}</button>
 </div>
 
 <div class="tab-content" id="tab-prompts">
@@ -567,13 +593,27 @@ h2 {
 <script>
 const vscode = acquireVsCodeApi();
 
+// Debounce функция для автосохранения
+let autoSaveTimeout = null;
+function autoSave(field, value) {
+  clearTimeout(autoSaveTimeout);
+  autoSaveTimeout = setTimeout(() => {
+    const msg = { command: 'autoSave' };
+    msg[field] = value;
+    vscode.postMessage(msg);
+  }, 500);
+}
+
 function setLang() {
-  vscode.postMessage({ command: 'setLang', lang: document.getElementById('language').value });
+  const lang = document.getElementById('language').value;
+  vscode.postMessage({ command: 'setLang', lang: lang });
+  autoSave('language', lang);
 }
 
 function toggleAuthorFilter() {
   const checked = document.getElementById('reportAuthorOnly').checked;
   document.getElementById('reportAuthorFilter-group').style.display = checked ? 'none' : '';
+  autoSave('reportAuthorOnly', checked);
 }
 
 function setProvider(provider) {
@@ -581,6 +621,7 @@ function setProvider(provider) {
   document.getElementById('btn-github').classList.toggle('active', provider === 'github');
   document.getElementById('gitlab-fields').classList.toggle('visible', provider === 'gitlab');
   document.getElementById('github-fields').classList.toggle('visible', provider === 'github');
+  autoSave('gitProvider', provider);
 }
 
 function togglePassword(id) {
@@ -659,24 +700,35 @@ window.addEventListener('message', (event) => {
   }
 });
 
-function save() {
-  vscode.postMessage({
-    command: 'save',
-    apiUrl: document.getElementById('apiUrl').value,
-    apiKey: document.getElementById('apiKey').value,
-    model: document.getElementById('model').value,
-    gitProvider: document.getElementById('btn-gitlab').classList.contains('active') ? 'gitlab' : 'github',
-    gitlabUrl: document.getElementById('gitlabUrl').value,
-    gitlabToken: document.getElementById('gitlabToken').value,
-    githubToken: document.getElementById('githubToken').value,
-    rejectUnauthorized: document.getElementById('rejectUnauthorized').checked,
-    gitmoji: document.getElementById('gitmoji').checked,
-    reportAuthorOnly: document.getElementById('reportAuthorOnly').checked,
-    reportAuthorFilter: document.getElementById('reportAuthorFilter').value,
-    prompt: document.getElementById('prompt').value,
-    language: document.getElementById('language').value,
+// Добавляем автосохранение при изменении полей
+function setupAutoSave() {
+  const textFields = ['apiUrl', 'apiKey', 'model', 'gitlabUrl', 'gitlabToken', 'githubToken', 'reportAuthorFilter', 'prompt'];
+  textFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', () => autoSave(id, el.value));
+      el.addEventListener('change', () => autoSave(id, el.value));
+      el.addEventListener('blur', () => autoSave(id, el.value));
+    }
   });
+  
+  const checkboxFields = ['rejectUnauthorized', 'gitmoji', 'reportAuthorOnly'];
+  checkboxFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('change', () => autoSave(id, el.checked));
+    }
+  });
+  
+  // Селектор языка
+  const langSelect = document.getElementById('language');
+  if (langSelect) {
+    langSelect.addEventListener('change', () => autoSave('language', langSelect.value));
+  }
 }
+
+setupAutoSave();
+
 vscode.postMessage({ command: 'load' });
 </script>
 </body>
