@@ -2,7 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.2.0] - 2026-07-05
+## [1.3.0] - 2026-07-06
+
+### Added
+- Auto-save settings functionality in settings panel
+- Extended logging in AI service for better debugging and error tracking
+
+### Changed
+- Improved settings panel with auto-save capability
+- Enhanced error logging across git, gitlab, and ai services
+
+## [1.3.0] - 2026-07-05
 
 ### Added
 - Calendar date picker for all date inputs in report (native `<input type="date">` via webview)
