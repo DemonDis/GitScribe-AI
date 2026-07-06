@@ -5,12 +5,12 @@
 ```bash
 # 1. Убедиться, что все изменения закоммичены и запушены
 git add .
-git commit -m "chore: bump version to 1.3.0"
+git commit -m "chore: bump version to 1.4.1"
 git push
 
 # 2. Создать и запушить тег (должен начинаться с v)
-git tag v1.3.0
-git push origin v1.3.0
+git tag v1.4.1
+git push origin v1.4.1
 ```
 
 После этого GitHub Actions сам:
@@ -33,7 +33,7 @@ npx @vscode/vsce package
 #    - Опубликовать
 
 # 3. Или через gh CLI
-gh release create v1.3.0 git-scribe-ai-1.3.0.vsix --generate-notes
+gh release create v1.4.1 git-scribe-ai-1.4.1.vsix --generate-notes
 ```
 
 ---

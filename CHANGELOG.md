@@ -2,7 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.3.0] - 2026-07-06
+## [1.4.1] - 2026-07-06
+
+### Added
+- New "Gitmojis" tab in settings panel — editable table with all gitmojis (emoji, code, description)
+- Add/remove gitmojis directly from the settings UI
+- "Restore defaults" button to reset gitmoji list to the built-in 75 entries
+- Custom gitmoji list is persisted in VS Code config (`gitscribe.gitmojis`)
+- Gitmoji support in commit messages now uses the customizable list
+
+### Removed
+- Dead `src/prompts/` directory (stale duplicate of `assets/prompts/`)
+
+### Fixed
+- Settings panel webview JavaScript error (`\'` escaping inside template literal breaking string delimiters)
+- Empty array default from VS Code config overriding `DEFAULT_GITMOJIS`
+- Webview functions now explicitly bound to `window` for reliable `onclick` resolution
+
+## [1.4.0] - 2026-07-06
 
 ### Added
 - Auto-save settings functionality in settings panel
@@ -32,7 +49,7 @@ All notable changes to this project will be documented in this file.
 - `workspaceFolders![0]` crash when no workspace open
 - Second source picker not showing correctly for local git modes
 
-## [1.1.0] - 2026-07-05
+## [1.2.0] - 2026-07-05
 
 ### Added
 - Prompts tab in settings panel — view and edit all prompt files (readme.md, update.md, update/readme.md, report.md)

@@ -2,7 +2,7 @@
   "name": "git-scribe-ai",
   "displayName": "GitScribe AI",
   "description": "AI-powered Git assistant: commit messages, README generation, reports",
-  "version": "1.3.0",
+  "version": "1.4.1",
   "icon": "img/icon.png",
   "publisher": "Ilnsk",
   "repository": {
@@ -145,6 +145,11 @@
           "type": "string",
           "default": "",
           "description": "Custom prompt template for commit message generation. Use {diff} as placeholder for the diff content."
+        },
+        "gitscribe.gitmojis": {
+          "type": "array",
+          "default": [],
+          "description": "Custom gitmoji list. Each item has emoji, code, and description fields."
         },
         "gitscribe.customPrompts": {
           "type": "object",

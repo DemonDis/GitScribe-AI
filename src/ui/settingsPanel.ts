@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { Gitmoji, DEFAULT_GITMOJIS } from '../config/types';
 
 type Lang = 'en' | 'ru';
 
@@ -41,6 +42,15 @@ const T: Record<Lang, Record<string, string>> = {
     gitlabUrlPlaceholder: 'https://gitlab.com',
     gitlabTokenPlaceholder: 'glpat-...',
     githubTokenPlaceholder: 'ghp_...',
+    gitmojisSection: 'Gitmojis',
+    gitmojiEmoji: 'Emoji',
+    gitmojiCode: 'Code',
+    gitmojiDesc: 'Description',
+    addGitmoji: 'Add gitmoji',
+    removeGitmoji: 'Remove',
+    restoreGitmojis: 'Restore defaults',
+    gitmojisRestored: 'Default gitmojis restored!',
+    confirmRestoreGitmojis: 'Restore default gitmojis? Custom changes will be lost.',
   },
   ru: {
     title: 'GitScribe AI — настройки',
@@ -78,6 +88,15 @@ const T: Record<Lang, Record<string, string>> = {
     gitlabUrlPlaceholder: 'https://gitlab.com',
     gitlabTokenPlaceholder: 'glpat-...',
     githubTokenPlaceholder: 'ghp_...',
+    gitmojisSection: 'Gitmojis',
+    gitmojiEmoji: 'Эмодзи',
+    gitmojiCode: 'Код',
+    gitmojiDesc: 'Описание',
+    addGitmoji: 'Добавить gitmoji',
+    removeGitmoji: 'Удалить',
+    restoreGitmojis: 'Сбросить до стандартных',
+    gitmojisRestored: 'Gitmojis сброшены до стандартных!',
+    confirmRestoreGitmojis: 'Сбросить gitmojis до стандартных? Все изменения будут потеряны.',
   },
 };
 
@@ -121,6 +140,9 @@ export class SettingsPanel {
         case 'restorePrompts':
           await this._restorePrompts();
           break;
+        case 'restoreGitmojis':
+          await this._restoreGitmojis();
+          break;
         case 'autoSave':
           await this._autoSaveSettings(msg);
           break;
@@ -151,6 +173,8 @@ export class SettingsPanel {
 
   private _loadSettings() {
     const config = vscode.workspace.getConfiguration('gitscribe');
+    const savedGitmojis = config.get<any>('gitmojis');
+    const hasCustomGitmojis = Array.isArray(savedGitmojis) && savedGitmojis.length > 0;
     this._panel.webview.postMessage({
       command: 'setValues',
       values: {
@@ -167,6 +191,7 @@ export class SettingsPanel {
         reportAuthorFilter: config.get('reportAuthorFilter', ''),
         prompt: config.get('prompt', ''),
         language: config.get('language', 'en'),
+        gitmojis: hasCustomGitmojis ? savedGitmojis : DEFAULT_GITMOJIS,
       }
     });
     this._sendPrompts();
@@ -214,6 +239,9 @@ export class SettingsPanel {
     await config.update('reportAuthorFilter', msg.reportAuthorFilter, vscode.ConfigurationTarget.Global);
     await config.update('prompt', msg.prompt, vscode.ConfigurationTarget.Global);
     await config.update('language', msg.language, vscode.ConfigurationTarget.Global);
+    if (msg.gitmojis !== undefined) {
+      await config.update('gitmojis', msg.gitmojis, vscode.ConfigurationTarget.Global);
+    }
     this._lang = msg.language as Lang;
     vscode.window.showInformationMessage(T[this._lang].settingsSaved);
   }
@@ -234,6 +262,7 @@ export class SettingsPanel {
     if (msg.reportAuthorOnly !== undefined) updates.push(config.update('reportAuthorOnly', msg.reportAuthorOnly, vscode.ConfigurationTarget.Global));
     if (msg.reportAuthorFilter !== undefined) updates.push(config.update('reportAuthorFilter', msg.reportAuthorFilter, vscode.ConfigurationTarget.Global));
     if (msg.prompt !== undefined) updates.push(config.update('prompt', msg.prompt, vscode.ConfigurationTarget.Global));
+    if (msg.gitmojis !== undefined) updates.push(config.update('gitmojis', msg.gitmojis, vscode.ConfigurationTarget.Global));
     if (msg.language !== undefined) {
       this._lang = msg.language as Lang;
       updates.push(config.update('language', msg.language, vscode.ConfigurationTarget.Global));
@@ -264,6 +293,22 @@ export class SettingsPanel {
     await vscode.workspace.getConfiguration('gitscribe').update('customPrompts', {}, vscode.ConfigurationTarget.Global);
     this._sendPrompts();
     vscode.window.showInformationMessage(T[this._lang].promptsRestored);
+  }
+
+  private async _restoreGitmojis() {
+    const action = await vscode.window.showWarningMessage(
+      T[this._lang].confirmRestoreGitmojis,
+      { modal: true },
+      T[this._lang].restoreGitmojis,
+    );
+    if (action !== T[this._lang].restoreGitmojis) return;
+
+    await vscode.workspace.getConfiguration('gitscribe').update('gitmojis', undefined, vscode.ConfigurationTarget.Global);
+    this._panel.webview.postMessage({
+      command: 'setGitmojis',
+      gitmojis: DEFAULT_GITMOJIS,
+    });
+    vscode.window.showInformationMessage(T[this._lang].gitmojisRestored);
   }
 
   private _tr(key: string): string {
@@ -470,6 +515,12 @@ h2 {
 }
 .prompt-actions .btn { margin: 0; }
 .prompt-actions .btn-sm { width: auto; }
+.gitmoji-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+.gitmoji-table th, .gitmoji-table td { padding: 4px 6px; border: 1px solid var(--vscode-panel-border); text-align: left; font-size: 12px; }
+.gitmoji-table th { background: var(--vscode-panel-background); font-weight: 600; }
+.gitmoji-table input { width: 100%; padding: 3px 6px; border: 1px solid var(--vscode-input-border); border-radius: 2px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); font-size: 12px; box-sizing: border-box; }
+.gitmoji-table input:focus { outline: 1px solid var(--vscode-focusBorder); border-color: var(--vscode-focusBorder); }
+.gitmoji-actions { display: flex; gap: 8px; margin-top: 8px; }
 </style>
 </head>
 <body>
@@ -488,6 +539,7 @@ h2 {
 <div class="tab-bar">
 <button class="tab-btn active" id="tab-settings-btn" onclick="switchTab('settings')">${this._tr('mainSettings')}</button>
 <button class="tab-btn" id="tab-prompts-btn" onclick="switchTab('prompts')">${this._tr('prompts')}</button>
+<button class="tab-btn" id="tab-gitmojis-btn" onclick="switchTab('gitmojis')">${this._tr('gitmojisSection')}</button>
 </div>
 
 <div class="tab-content active" id="tab-settings">
@@ -580,6 +632,29 @@ h2 {
 </div>
 </div>
 
+</div>
+
+<div class="tab-content" id="tab-gitmojis">
+<div class="section">
+<div class="section-title">${this._tr('gitmojisSection')}</div>
+<div class="form-group">
+<table class="gitmoji-table">
+<thead>
+<tr>
+<th style="width:80px">${this._tr('gitmojiEmoji')}</th>
+<th style="width:120px">${this._tr('gitmojiCode')}</th>
+<th>${this._tr('gitmojiDesc')}</th>
+<th style="width:60px"></th>
+</tr>
+</thead>
+<tbody id="gitmojis-tbody"></tbody>
+</table>
+</div>
+<div class="gitmoji-actions">
+<button class="btn-sm" onclick="addGitmojiRow()">${this._tr('addGitmoji')}</button>
+<button class="btn-sm btn-danger" onclick="restoreGitmojis()">${this._tr('restoreGitmojis')}</button>
+</div>
+</div>
 </div>
 
 <div class="tab-content" id="tab-prompts">
@@ -675,6 +750,63 @@ function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+window.switchTab = switchTab;
+window.renderPrompts = renderPrompts;
+window.savePrompts = savePrompts;
+window.restorePrompts = restorePrompts;
+window.setLang = setLang;
+window.toggleAuthorFilter = toggleAuthorFilter;
+window.setProvider = setProvider;
+window.togglePassword = togglePassword;
+window.copyToClipboard = copyToClipboard;
+window.escapeHtml = escapeHtml;
+window.autoSave = autoSave;
+
+let gitmojiAutoSaveTimeout = null;
+function autoSaveGitmojis() {
+  clearTimeout(gitmojiAutoSaveTimeout);
+  gitmojiAutoSaveTimeout = setTimeout(() => {
+    vscode.postMessage({ command: 'autoSave', gitmojis: collectGitmojis() });
+  }, 500);
+}
+
+function collectGitmojis() {
+  const rows = document.querySelectorAll('#gitmojis-tbody tr');
+  return Array.from(rows).map(tr => ({
+    emoji: tr.querySelector('.gitmoji-emoji').value,
+    code: tr.querySelector('.gitmoji-code').value,
+    description: tr.querySelector('.gitmoji-desc').value,
+  }));
+}
+
+function renderGitmojis(gitmojis) {
+  const tbody = document.getElementById('gitmojis-tbody');
+  tbody.innerHTML = '';
+  (gitmojis || []).forEach(g => addGitmojiRow(g));
+}
+
+function addGitmojiRow(g) {
+  const tbody = document.getElementById('gitmojis-tbody');
+  const gObj = g || { emoji: '', code: '', description: '' };
+  const tr = document.createElement('tr');
+  tr.innerHTML =
+    '<td><input type="text" class="gitmoji-emoji" value="' + escapeHtml(gObj.emoji) + '" oninput="autoSaveGitmojis()" /></td>' +
+    '<td><input type="text" class="gitmoji-code" value="' + escapeHtml(gObj.code) + '" oninput="autoSaveGitmojis()" /></td>' +
+    '<td><input type="text" class="gitmoji-desc" value="' + escapeHtml(gObj.description) + '" oninput="autoSaveGitmojis()" /></td>' +
+    '<td><button class="btn-sm" onclick="this.closest(&#39;tr&#39;).remove(); autoSaveGitmojis();" title="Remove">✕</button></td>';
+  tbody.appendChild(tr);
+}
+
+function restoreGitmojis() {
+  vscode.postMessage({ command: 'restoreGitmojis' });
+}
+
+window.autoSaveGitmojis = autoSaveGitmojis;
+window.collectGitmojis = collectGitmojis;
+window.renderGitmojis = renderGitmojis;
+window.addGitmojiRow = addGitmojiRow;
+window.restoreGitmojis = restoreGitmojis;
+
 window.addEventListener('message', (event) => {
   const msg = event.data;
   if (msg.command === 'setValues') {
@@ -694,6 +826,10 @@ window.addEventListener('message', (event) => {
     if (msg.values.prompt) {
       document.getElementById('prompt').value = msg.values.prompt;
     }
+    renderGitmojis(msg.values.gitmojis);
+  }
+  if (msg.command === 'setGitmojis') {
+    renderGitmojis(msg.gitmojis);
   }
   if (msg.command === 'setPrompts') {
     renderPrompts(msg.current, msg.defaults);

@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { AiConfig, DEFAULT_AI_CONFIG } from './types';
+import { AiConfig, DEFAULT_AI_CONFIG, Gitmoji } from './types';
 import { DEFAULT_REPOMIX_CONFIG } from './repomix';
 import { t } from '../i18n';
 
@@ -54,6 +54,7 @@ export class ConfigService {
       githubToken: vsconfig.get<string>('githubToken'),
       rejectUnauthorized: vsconfig.get<boolean>('rejectUnauthorized', false),
       gitmoji: vsconfig.get<boolean>('gitmoji', false),
+      gitmojis: vsconfig.get<Gitmoji[]>('gitmojis') || undefined,
       prompt: vsconfig.get<string>('prompt') || DEFAULT_AI_CONFIG.prompt,
     };
   }
