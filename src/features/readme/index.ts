@@ -45,58 +45,64 @@ export function registerReadmeCommands(context: vscode.ExtensionContext): vscode
     }
 
     try {
-      vscode.window.showInformationMessage(t('runningRepomix'));
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          cancellable: false,
+        },
+        async (progress) => {
+          progress.report({ message: t('runningRepomix') });
 
-      const outputPath = await repomixService.run(workspacePath);
-      vscode.window.showInformationMessage(t('repomixCompleted'));
+          const outputPath = await repomixService.run(workspacePath);
 
-      const repomixContent = repomixService.readOutput(outputPath);
-      const tCount = tokenService.countForQwen(repomixContent);
-      vscode.window.showInformationMessage(t('tokenCount').replace('{count}', tCount.toLocaleString()));
+          const repomixContent = repomixService.readOutput(outputPath);
+          const tCount = tokenService.countForQwen(repomixContent);
 
-      let promptType = getPromptContent(context, 'readme.md');
-      if (promptFile) {
-        promptType = getPromptContent(context, promptFile);
-      }
+          progress.report({ message: `${t('tokenCount').replace('{count}', tCount.toLocaleString())}, ${t('sendingToAi')}` });
 
-      vscode.window.showInformationMessage(t('sendingToAi'));
-      const readmeContent = await aiService.generateReadme(config, promptType, repomixContent);
+          let promptType = getPromptContent(context, 'readme.md');
+          if (promptFile) {
+            promptType = getPromptContent(context, promptFile);
+          }
 
-      let outputFileName = 'README.md';
-      if (promptFile) {
-        const baseName = promptFile.replace('.md', '');
-        outputFileName = baseName.charAt(0).toUpperCase() + baseName.slice(1) + '.md';
-      }
+          const readmeContent = await aiService.generateReadme(config, promptType, repomixContent);
 
-      let readmePath = path.join(workspacePath, outputFileName);
-      if (fs.existsSync(readmePath)) {
-        const ext = path.extname(outputFileName);
-        const base = path.basename(outputFileName, ext);
-        let counter = 1;
-        do {
-          outputFileName = `${base}_${counter}${ext}`;
-          readmePath = path.join(workspacePath, outputFileName);
-          counter++;
-        } while (fs.existsSync(readmePath));
-      }
+          let outputFileName = 'README.md';
+          if (promptFile) {
+            const baseName = promptFile.replace('.md', '');
+            outputFileName = baseName.charAt(0).toUpperCase() + baseName.slice(1) + '.md';
+          }
 
-      fs.writeFileSync(readmePath, readmeContent);
+          let readmePath = path.join(workspacePath, outputFileName);
+          if (fs.existsSync(readmePath)) {
+            const ext = path.extname(outputFileName);
+            const base = path.basename(outputFileName, ext);
+            let counter = 1;
+            do {
+              outputFileName = `${base}_${counter}${ext}`;
+              readmePath = path.join(workspacePath, outputFileName);
+              counter++;
+            } while (fs.existsSync(readmePath));
+          }
 
-      const gitService = new GitService(workspacePath);
-      const commitHash = await gitService.getLastCommitHash();
-      if (commitHash) {
-        fs.appendFileSync(readmePath, `\n\n<!-- git-scribe-ai: ${commitHash} -->`);
-      }
+          fs.writeFileSync(readmePath, readmeContent);
 
-      if (fs.existsSync(outputPath)) {
-        fs.unlinkSync(outputPath);
-      }
+          const gitService = new GitService(workspacePath);
+          const commitHash = await gitService.getLastCommitHash();
+          if (commitHash) {
+            fs.appendFileSync(readmePath, `\n\n<!-- git-scribe-ai: ${commitHash} -->`);
+          }
 
-      vscode.window.showInformationMessage(t('readmeCreated').replace('{file}', outputFileName));
+          if (fs.existsSync(outputPath)) {
+            fs.unlinkSync(outputPath);
+          }
 
-      const doc = await vscode.workspace.openTextDocument(readmePath);
-      await vscode.window.showTextDocument(doc);
+          vscode.window.showInformationMessage(t('readmeCreated').replace('{file}', outputFileName));
 
+          const doc = await vscode.workspace.openTextDocument(readmePath);
+          await vscode.window.showTextDocument(doc);
+        }
+      );
     } catch (error: any) {
       vscode.window.showErrorMessage(t('errorOccurred').replace('{msg}', error.message));
     }
@@ -164,11 +170,18 @@ export function registerReadmeCommands(context: vscode.ExtensionContext): vscode
     const DIFF_TRUNCATE = parseInt(process.env.GITSCRIBE_DIFF_TRUNCATE || '8000', 10);
 
     const promptContent = getPromptContent(context, 'update.md');
-    let readmeContent: string;
 
-    if (diff.rawDiff.length <= DIFF_MAX_SIZE) {
-      const formattedDiff = gitService.formatDiffForAI(diff, DIFF_TRUNCATE);
-      const fullContext = `${promptContent}
+    const readmeContent = await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        cancellable: false,
+      },
+      async (progress): Promise<string> => {
+        if (diff.rawDiff.length <= DIFF_MAX_SIZE) {
+          progress.report({ message: t('usingDiffOnly') });
+
+          const formattedDiff = gitService.formatDiffForAI(diff, DIFF_TRUNCATE);
+          const fullContext = `${promptContent}
 
 Below is the current README.md and the code diff. Update the README to reflect the changes in the diff, preserving its style and any manual edits.
 
@@ -179,21 +192,24 @@ ${readmeWithoutMarker}
 
 ${formattedDiff}`;
 
-      vscode.window.showInformationMessage(t('usingDiffOnly'));
-      readmeContent = await aiService.generateReadme(config, '', fullContext);
-    } else {
-      vscode.window.showInformationMessage(t('runningRepomix'));
-      const outputPath = await repomixService.run(workspacePath);
-      let repomixContent = repomixService.readOutput(outputPath);
-      repomixContent = repomixContent.replace(/<file\s+path="[^"]*README\.md"[^>]*>[\s\S]*?<\/file>\n*/gi, '');
-      repomixContent = repomixContent.replace(/^.*README\.md.*\n/gm, '');
-      const tCount = tokenService.countForQwen(repomixContent);
-      vscode.window.showInformationMessage(t('tokenCount').replace('{count}', tCount.toLocaleString()));
+          return await aiService.generateReadme(config, '', fullContext);
+        } else {
+          progress.report({ message: t('runningRepomix') });
 
-      readmeContent = await aiService.generateReadme(config, promptContent, repomixContent);
+          const outputPath = await repomixService.run(workspacePath);
+          let repomixContent = repomixService.readOutput(outputPath);
+          repomixContent = repomixContent.replace(/<file\s+path="[^"]*README\.md"[^>]*>[\s\S]*?<\/file>\n*/gi, '');
+          repomixContent = repomixContent.replace(/^.*README\.md.*\n/gm, '');
+          const tCount = tokenService.countForQwen(repomixContent);
+          progress.report({ message: `${t('tokenCount').replace('{count}', tCount.toLocaleString())}, ${t('sendingToAi')}` });
 
-      if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
-    }
+          const result = await aiService.generateReadme(config, promptContent, repomixContent);
+
+          if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+          return result;
+        }
+      }
+    );
 
     const newCommitHash = await gitService.getLastCommitHash();
     const resultContent = readmeContent.trimEnd() + `\n\n<!-- git-scribe-ai: ${newCommitHash || baseRef} -->`;
